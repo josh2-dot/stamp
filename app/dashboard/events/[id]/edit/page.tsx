@@ -1,0 +1,602 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
+import { TopNav } from "@/components/landing/TopNav";
+import { Card, CardLabel } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { Badge } from "@/components/ui/Badge";
+import { PosterPicker } from "@/components/event/PosterPicker";
+import { formatNaira } from "@/lib/format";
+import type { EditEventResponse } from "@/types";
+
+interface ExistingTier {
+  id: string;
+  name: string;
+  price: number;         // kobo
+  service_fee: number;   // kobo
+  capacity: number;
+  sold: number;
+  sort_order: number;
+}
+
+interface EventData {
+  id: string;
+  title: string;
+  description: string | null;
+  venue: string;
+  event_date: string;
+  slug: string;
+  is_active: boolean;
+  poster_url: string | null;
+}
+
+interface TierDraft {
+  id?: string;           // present when editing an existing tier
+  localKey: string;      // stable key for React list rendering
+  name: string;
+  price: string;         // naira (form-level string)
+  service_fee: string;
+  capacity: string;
+  sold: number;          // read-only — drives validation rules
+}
+
+const newTier = (): TierDraft => ({
+  localKey: crypto.randomUUID(),
+  name: "",
+  price: "",
+  service_fee: "200",
+  capacity: "",
+  sold: 0,
+});
+
+// Convert from input local-datetime back/forth using WAT (UTC+1, no DST).
+function isoToLocalInput(iso: string): string {
+  const d = new Date(iso);
+  const wat = new Date(d.getTime() + 60 * 60 * 1000); // UTC → WAT
+  return wat.toISOString().slice(0, 16);
+}
+
+function localInputToIso(local: string): string {
+  // Treat the value as WAT, convert back to UTC for storage
+  const d = new Date(local);
+  if (isNaN(d.getTime())) return new Date().toISOString();
+  return new Date(d.getTime() - 60 * 60 * 1000).toISOString();
+}
+
+export default function EditEventPage() {
+  const router = useRouter();
+  const params = useParams<{ id: string }>();
+
+  const [event, setEvent] = useState<EventData | null>(null);
+  const [tiers, setTiers] = useState<TierDraft[]>([]);
+  const [originalTiers, setOriginalTiers] = useState<ExistingTier[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  // Form state
+  const [title, setTitle] = useState("");
+  const [venue, setVenue] = useState("");
+  const [description, setDescription] = useState("");
+  const [date, setDate] = useState("");
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [posterUploading, setPosterUploading] = useState(false);
+  const [posterError, setPosterError] = useState<string | null>(null);
+
+  // Submit state
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
+
+  // Deactivate flow
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
+  const [toggling, setToggling] = useState(false);
+
+  // Initial load
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/events/${params.id}`);
+        if (!res.ok) {
+          setLoadError(res.status === 404 ? "Event not found." : "Couldn't load event.");
+          return;
+        }
+        const { event: ev, tiers: dbTiers } = (await res.json()) as {
+          event: EventData;
+          tiers: ExistingTier[];
+        };
+        if (cancelled) return;
+
+        setEvent(ev);
+        setTitle(ev.title);
+        setVenue(ev.venue);
+        setDescription(ev.description ?? "");
+        setDate(isoToLocalInput(ev.event_date));
+
+        setOriginalTiers(dbTiers);
+        setTiers(
+          dbTiers.map((t) => ({
+            id: t.id,
+            localKey: t.id,
+            name: t.name,
+            price: String(t.price / 100),
+            service_fee: String(t.service_fee / 100),
+            capacity: String(t.capacity),
+            sold: t.sold,
+          })),
+        );
+      } catch (err) {
+        console.error(err);
+        if (!cancelled) setLoadError("Network problem.");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [params.id]);
+
+  const updateTier = (key: string, patch: Partial<TierDraft>) => {
+    setTiers((rows) =>
+      rows.map((r) => (r.localKey === key ? { ...r, ...patch } : r)),
+    );
+  };
+  const removeTier = (key: string) => {
+    setTiers((rows) =>
+      rows.length > 1 ? rows.filter((r) => r.localKey !== key) : rows,
+    );
+  };
+  const addTier = () => setTiers((rows) => [...rows, newTier()]);
+
+  // Poster file change → immediate upload (independent of the text-field save).
+  // Treats poster as its own atomic operation rather than coupling it to the
+  // PATCH endpoint, which keeps the multipart concerns out of the JSON API.
+  const handlePosterChange = async (file: File | null) => {
+    setPosterError(null);
+    setPosterFile(file);
+    if (!file || !event) return;
+
+    setPosterUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/events/${params.id}/poster`, {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setPosterError(data.error || "Couldn't upload poster.");
+        setPosterFile(null);
+        return;
+      }
+      setEvent({ ...event, poster_url: data.poster_url });
+      setPosterFile(null); // clear pending — preview now driven by initialUrl
+    } catch (err) {
+      console.error(err);
+      setPosterError("Network problem.");
+      setPosterFile(null);
+    } finally {
+      setPosterUploading(false);
+    }
+  };
+
+  const handlePosterRemove = async () => {
+    if (!event) return;
+    setPosterError(null);
+    setPosterUploading(true);
+    try {
+      const res = await fetch(`/api/events/${params.id}/poster`, {
+        method: "DELETE",
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setPosterError(data.error || "Couldn't remove poster.");
+        return;
+      }
+      setEvent({ ...event, poster_url: null });
+    } catch (err) {
+      console.error(err);
+      setPosterError("Network problem.");
+    } finally {
+      setPosterUploading(false);
+    }
+  };
+
+  const dirty = useMemo(() => {
+    if (!event) return false;
+    if (title.trim() !== event.title) return true;
+    if (venue.trim() !== event.venue) return true;
+    if ((description.trim() || null) !== (event.description ?? null)) return true;
+    if (date && localInputToIso(date) !== event.event_date) return true;
+
+    // Tier-level diff
+    if (tiers.length !== originalTiers.length) return true;
+    for (const t of tiers) {
+      if (!t.id) return true;
+      const orig = originalTiers.find((o) => o.id === t.id);
+      if (!orig) return true;
+      if (orig.name !== t.name.trim()) return true;
+      if (orig.price !== Math.round(parseFloat(t.price || "0") * 100)) return true;
+      if (orig.service_fee !== Math.round(parseFloat(t.service_fee || "0") * 100)) return true;
+      if (orig.capacity !== parseInt(t.capacity || "0", 10)) return true;
+    }
+    return false;
+  }, [event, title, venue, description, date, tiers, originalTiers]);
+
+  const handleSave = async () => {
+    setSaveError(null);
+    setSaved(false);
+
+    if (!title.trim() || !venue.trim() || !date) {
+      setSaveError("Title, venue, and date are required.");
+      return;
+    }
+
+    const parsedTiers = tiers.map((t, i) => ({
+      id: t.id,
+      name: t.name.trim(),
+      price_naira: parseFloat(t.price) || 0,
+      service_fee_naira: parseFloat(t.service_fee) || 0,
+      capacity: parseInt(t.capacity, 10) || 0,
+      sort_order: i,
+    }));
+
+    if (parsedTiers.some((t) => !t.name)) {
+      setSaveError("Every tier needs a name.");
+      return;
+    }
+    if (parsedTiers.some((t) => t.capacity <= 0)) {
+      setSaveError("Every tier needs a capacity greater than zero.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/events/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: title.trim(),
+          venue: venue.trim(),
+          description: description.trim() || null,
+          event_date: localInputToIso(date),
+          tiers: parsedTiers,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setSaveError(data.error || "Couldn't save.");
+        setSaving(false);
+        return;
+      }
+      // Re-fetch to refresh original state + sold counts
+      const refresh = await fetch(`/api/events/${params.id}`);
+      const fresh = await refresh.json();
+      setEvent(fresh.event);
+      setOriginalTiers(fresh.tiers);
+      setTiers(
+        fresh.tiers.map((t: ExistingTier) => ({
+          id: t.id,
+          localKey: t.id,
+          name: t.name,
+          price: String(t.price / 100),
+          service_fee: String(t.service_fee / 100),
+          capacity: String(t.capacity),
+          sold: t.sold,
+        })),
+      );
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err) {
+      console.error(err);
+      setSaveError("Network problem.");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleActive = async () => {
+    if (!event) return;
+    setToggling(true);
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/events/${params.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ is_active: !event.is_active }),
+      });
+      const data = (await res.json()) as EditEventResponse | { error: string };
+      if (!res.ok || "error" in data) {
+        setSaveError(("error" in data && data.error) || "Couldn't change status.");
+        setToggling(false);
+        return;
+      }
+      setEvent({ ...event, is_active: data.is_active });
+      setConfirmDeactivate(false);
+    } catch (err) {
+      console.error(err);
+      setSaveError("Network problem.");
+    } finally {
+      setToggling(false);
+    }
+  };
+
+  if (loadError) {
+    return (
+      <>
+        <TopNav />
+        <main className="max-w-md mx-auto px-6 pt-40 text-center">
+          <h1 className="text-display text-2xl">{loadError}</h1>
+          <Link href="/dashboard" className="text-stamp-orange mt-6 inline-block hover:underline">
+            ← Back to events
+          </Link>
+        </main>
+      </>
+    );
+  }
+
+  if (!event) {
+    return (
+      <>
+        <TopNav />
+        <main className="max-w-3xl mx-auto px-6 pt-32 pb-24">
+          <div className="animate-stamp-pulse space-y-4">
+            <div className="h-8 w-48 bg-stamp-surface rounded-md" />
+            <div className="h-64 bg-stamp-surface rounded-lg" />
+            <div className="h-64 bg-stamp-surface rounded-lg" />
+          </div>
+        </main>
+      </>
+    );
+  }
+
+  return (
+    <>
+      <TopNav />
+      <main className="max-w-3xl mx-auto px-6 pt-32 pb-24">
+        <Link
+          href={`/dashboard/events/${params.id}`}
+          className="inline-flex items-center gap-2 text-sm text-stamp-muted hover:text-stamp-white transition-colors mb-6"
+        >
+          ← Back to dashboard
+        </Link>
+
+        <div className="flex items-start justify-between gap-4 mb-10 flex-wrap">
+          <div>
+            <CardLabel>Editing</CardLabel>
+            <h1 className="text-display text-4xl mt-2 text-balance">{event.title}</h1>
+          </div>
+          <Badge tone={event.is_active ? "success" : "warning"} dot={event.is_active}>
+            {event.is_active ? "Live" : "Deactivated"}
+          </Badge>
+        </div>
+
+        {!event.is_active && (
+          <Card className="mb-6 border-stamp-gold/40 bg-stamp-gold/5">
+            <p className="text-xs uppercase tracking-[0.2em] text-stamp-gold font-medium">
+              Deactivated
+            </p>
+            <p className="text-sm mt-1 text-stamp-white/90">
+              The public event page is hidden and no new tickets can be sold. Existing tickets still work at the scanner. Reactivate to put it back on sale.
+            </p>
+          </Card>
+        )}
+
+        <div className="space-y-6">
+          {/* Event details */}
+          <Card className="space-y-5">
+            <CardLabel>Event details</CardLabel>
+            <Input
+              label="Event title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+            />
+            <Input
+              label="Venue"
+              value={venue}
+              onChange={(e) => setVenue(e.target.value)}
+            />
+            <Input
+              label="Date & time"
+              type="datetime-local"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              hint="Lagos time (WAT)."
+            />
+            <div>
+              <label className="block text-xs uppercase tracking-[0.18em] text-stamp-muted font-medium mb-2">
+                Description
+              </label>
+              <textarea
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                rows={4}
+                className="w-full bg-stamp-surface2 border border-stamp-border rounded-md px-3.5 py-2.5 text-sm text-stamp-white placeholder:text-stamp-muted outline-none focus:border-stamp-orange/60 transition-colors resize-y"
+              />
+            </div>
+
+            <PosterPicker
+              initialUrl={event.poster_url}
+              pendingFile={posterFile}
+              onPendingFileChange={handlePosterChange}
+              onRemove={handlePosterRemove}
+              uploading={posterUploading}
+              error={posterError}
+            />
+          </Card>
+
+          {/* Tiers */}
+          <Card className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardLabel>Ticket tiers</CardLabel>
+                <p className="text-stamp-muted text-xs mt-1">
+                  You can't drop a tier's capacity below tickets already sold, or remove a tier with sales.
+                </p>
+              </div>
+              <Button variant="secondary" size="sm" onClick={addTier}>
+                + Add tier
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              {tiers.map((tier, idx) => {
+                const hasSales = tier.sold > 0;
+                const capacityNum = parseInt(tier.capacity || "0", 10);
+                const capacityTooLow = hasSales && capacityNum < tier.sold;
+
+                return (
+                  <div
+                    key={tier.localKey}
+                    className="rounded-lg border border-stamp-border bg-stamp-surface2 p-4 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs uppercase tracking-[0.2em] text-stamp-muted">
+                        Tier {idx + 1}
+                        {!tier.id && (
+                          <span className="ml-2 text-stamp-orange normal-case tracking-normal">
+                            new
+                          </span>
+                        )}
+                      </span>
+                      <div className="flex items-center gap-3">
+                        {hasSales && (
+                          <Badge tone="success">{tier.sold} sold</Badge>
+                        )}
+                        {!hasSales && tiers.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => removeTier(tier.localKey)}
+                            className="text-xs text-stamp-red hover:underline"
+                          >
+                            Remove
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <Input
+                      label="Name"
+                      value={tier.name}
+                      onChange={(e) => updateTier(tier.localKey, { name: e.target.value })}
+                    />
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <Input
+                        label="Face value"
+                        type="number"
+                        inputMode="numeric"
+                        value={tier.price}
+                        onChange={(e) => updateTier(tier.localKey, { price: e.target.value })}
+                        prefix="₦"
+                      />
+                      <Input
+                        label="Service fee"
+                        type="number"
+                        inputMode="numeric"
+                        value={tier.service_fee}
+                        onChange={(e) => updateTier(tier.localKey, { service_fee: e.target.value })}
+                        prefix="₦"
+                      />
+                      <Input
+                        label="Capacity"
+                        type="number"
+                        inputMode="numeric"
+                        value={tier.capacity}
+                        onChange={(e) => updateTier(tier.localKey, { capacity: e.target.value })}
+                        error={capacityTooLow ? `Min ${tier.sold}` : undefined}
+                      />
+                    </div>
+
+                    {tier.price && tier.service_fee && (
+                      <p className="text-xs text-stamp-muted pt-1">
+                        Buyer pays {formatNaira(
+                          (parseFloat(tier.price) + parseFloat(tier.service_fee || "0")) * 100,
+                        )}
+                        {" · "}You receive {formatNaira(parseFloat(tier.price) * 100)} per ticket
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </Card>
+
+          {saveError && (
+            <div className="p-4 rounded-md bg-stamp-red/10 border border-stamp-red/30 text-stamp-red text-sm">
+              {saveError}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            {/* Destructive zone on the left */}
+            <div>
+              {event.is_active ? (
+                confirmDeactivate ? (
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-stamp-muted">Confirm?</span>
+                    <Button
+                      variant="danger"
+                      size="sm"
+                      onClick={handleToggleActive}
+                      loading={toggling}
+                    >
+                      Yes, deactivate
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setConfirmDeactivate(false)}
+                      disabled={toggling}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setConfirmDeactivate(true)}
+                    className="text-stamp-red hover:bg-stamp-red/10"
+                  >
+                    Deactivate event
+                  </Button>
+                )
+              ) : (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={handleToggleActive}
+                  loading={toggling}
+                >
+                  Reactivate event
+                </Button>
+              )}
+            </div>
+
+            {/* Save actions on the right */}
+            <div className="flex items-center gap-3">
+              {saved && <Badge tone="success">Saved</Badge>}
+              <Link href={`/dashboard/events/${params.id}`}>
+                <Button variant="ghost" disabled={saving}>
+                  Cancel
+                </Button>
+              </Link>
+              <Button
+                onClick={handleSave}
+                loading={saving}
+                disabled={!dirty}
+                variant={dirty ? "primary" : "secondary"}
+                size="lg"
+              >
+                Save changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      </main>
+    </>
+  );
+}
