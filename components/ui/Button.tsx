@@ -9,6 +9,12 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: Size;
   loading?: boolean;
   fullWidth?: boolean;
+  /**
+   * Apply the brand orange glow shadow — reserved for the single highest-intent
+   * CTA on a page (Hero "Start selling", checkout "Pay", dashboard "+ New event",
+   * etc). When every primary glows, none of them do.
+   */
+  glow?: boolean;
 }
 
 const base =
@@ -20,7 +26,7 @@ const base =
 const variants: Record<Variant, string> = {
   primary:
     "bg-stamp-orange text-stamp-black hover:bg-stamp-orange/90 " +
-    "shadow-stamp-glow focus-visible:ring-stamp-orange active:translate-y-px",
+    "focus-visible:ring-stamp-orange active:translate-y-px",
   secondary:
     "bg-stamp-surface2 text-stamp-white border border-stamp-border " +
     "hover:bg-stamp-surface2/70 hover:border-stamp-muted/50 " +
@@ -45,6 +51,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
     size = "md",
     loading = false,
     fullWidth = false,
+    glow = false,
     className,
     children,
     disabled,
@@ -61,6 +68,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         variants[variant],
         sizes[size],
         fullWidth && "w-full",
+        glow && variant === "primary" && "shadow-stamp-glow",
         className,
       )}
       {...rest}

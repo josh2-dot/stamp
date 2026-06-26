@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/Badge";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import type { Event } from "@/types";
 
 interface EventHeaderProps {
@@ -36,29 +37,35 @@ export function EventHeader({ event }: EventHeaderProps) {
       )}
 
       <div className="space-y-4">
-        <Badge tone={isPast ? "default" : "success"} dot={!isPast}>
+        {/* Was tone="success" — DESIGN.md reserves green for gate verification.
+            "Tickets on sale" uses default tone + pulsing dot for active state. */}
+        <Badge tone="default" dot={!isPast}>
           {isPast ? "Event ended" : "Tickets on sale"}
         </Badge>
 
-        <h1 className="text-display text-4xl sm:text-5xl lg:text-6xl text-balance leading-[0.95]">
+        <h1 className="font-display text-display-lg sm:text-display-xl text-stamp-white text-balance">
           {event.title}
         </h1>
 
-        <div className="flex flex-wrap gap-x-8 gap-y-3 pt-2 text-stamp-muted">
-          <div className="flex items-center gap-2">
-            <span aria-hidden="true">📅</span>
-            <span>
-              {dateStr} · <span className="text-stamp-white">{timeStr}</span>
-            </span>
+        {/* Emoji 📅 📍 dropped — they're OS-rendered and inconsistent against
+            the bespoke seal/scanner marks. Using Eyebrow labels reads as
+            metadata, not decoration. The WhatsApp preview in Features.tsx
+            keeps emoji because that's authentic to the medium. */}
+        <dl className="flex flex-wrap gap-x-10 gap-y-4 pt-2">
+          <div>
+            <Eyebrow>When</Eyebrow>
+            <dd className="text-stamp-white mt-1">
+              {dateStr} · <span className="text-stamp-muted-2">{timeStr}</span>
+            </dd>
           </div>
-          <div className="flex items-center gap-2">
-            <span aria-hidden="true">📍</span>
-            <span className="text-stamp-white">{event.venue}</span>
+          <div>
+            <Eyebrow>Where</Eyebrow>
+            <dd className="text-stamp-white mt-1">{event.venue}</dd>
           </div>
-        </div>
+        </dl>
 
         {event.description && (
-          <p className="text-stamp-white/80 leading-relaxed max-w-2xl pt-4 whitespace-pre-line">
+          <p className="text-stamp-white leading-relaxed max-w-2xl pt-4 whitespace-pre-line">
             {event.description}
           </p>
         )}

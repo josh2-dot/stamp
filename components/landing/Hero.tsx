@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
-import { StampSeal } from "@/components/ui/StampSeal";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 
 export function Hero() {
   return (
@@ -19,24 +19,22 @@ export function Hero() {
         aria-hidden="true"
       />
 
-      {/* Floating seal — decorative */}
-      <div className="absolute -top-10 -right-20 opacity-10 pointer-events-none hidden lg:block">
-        <StampSeal size={400} tilt />
-      </div>
+      {/* No decorative seal here — DESIGN.md reserves the seal for verification
+          moments (ADMIT/DENY, buy-success). Using it as wallpaper kills its impact. */}
 
       <div className="relative max-w-6xl mx-auto px-6 pt-32 pb-24 lg:pt-40 lg:pb-32">
         <div className="max-w-3xl">
-          <Badge tone="success" dot className="mb-8">
+          <Badge tone="default" dot className="mb-8">
             Live at Rivers State University
           </Badge>
 
-          <h1 className="text-display text-5xl sm:text-6xl lg:text-7xl leading-[0.95] text-balance">
-            Campus tickets.
-            <br />
-            <span className="text-stamp-orange">Verified at the door.</span>
+          {/* Headline carries no brand orange — the CTA below owns that focal cue.
+              text-balance wrap helps the two-line layout breathe on tablet. */}
+          <h1 className="font-display text-display-lg sm:text-display-xl text-stamp-white text-balance">
+            Campus tickets, verified at the door.
           </h1>
 
-          <p className="mt-8 max-w-xl text-lg text-stamp-muted leading-relaxed">
+          <p className="mt-8 max-w-xl text-base sm:text-lg text-stamp-muted-2 leading-relaxed">
             STAMP is how Nigerian student organizers sell tickets, deliver
             them by WhatsApp, and scan them at the gate — without a third party
             running off with the float.
@@ -44,7 +42,7 @@ export function Hero() {
 
           <div className="mt-10 flex flex-wrap items-center gap-3">
             <Link href="#pricing">
-              <Button size="lg">Start selling tickets</Button>
+              <Button size="lg" glow>Start selling tickets</Button>
             </Link>
             <Link href="#how">
               <Button size="lg" variant="secondary">
@@ -53,25 +51,26 @@ export function Hero() {
             </Link>
           </div>
 
-          {/* Stat strip */}
-          <dl className="mt-16 grid grid-cols-3 gap-4 max-w-lg">
+          {/* Confidence strip — shrunk from text-3xl Syne to a quieter footer-band.
+              Three numbers at hero scale was fighting the CTA for the eye. */}
+          <dl className="mt-14 grid grid-cols-3 gap-6 max-w-lg border-t border-stamp-border pt-6">
             <div>
-              <dt className="text-xs uppercase tracking-[0.2em] text-stamp-muted">
-                Sold to date
-              </dt>
-              <dd className="text-display text-3xl mt-1">1,200+</dd>
+              <Eyebrow>Sold to date</Eyebrow>
+              <dd className="font-display text-display-xs text-stamp-white mt-1.5">
+                1,200+
+              </dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-[0.2em] text-stamp-muted">
-                Avg. settle
-              </dt>
-              <dd className="text-display text-3xl mt-1">24h</dd>
+              <Eyebrow>Avg. settle</Eyebrow>
+              <dd className="font-display text-display-xs text-stamp-white mt-1.5">
+                24h
+              </dd>
             </div>
             <div>
-              <dt className="text-xs uppercase tracking-[0.2em] text-stamp-muted">
-                Fraud rate
-              </dt>
-              <dd className="text-display text-3xl mt-1">0%</dd>
+              <Eyebrow>Fraud rate</Eyebrow>
+              <dd className="font-display text-display-xs text-stamp-white mt-1.5">
+                0%
+              </dd>
             </div>
           </dl>
         </div>

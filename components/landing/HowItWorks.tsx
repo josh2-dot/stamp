@@ -1,4 +1,5 @@
-import { Card, CardLabel } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 
 const steps = [
   {
@@ -26,20 +27,24 @@ export function HowItWorks() {
     <section id="how" className="relative py-24 lg:py-32">
       <div className="max-w-6xl mx-auto px-6">
         <div className="max-w-2xl mb-16">
-          <CardLabel>How it works</CardLabel>
-          <h2 className="text-display text-4xl sm:text-5xl mt-3 text-balance">
+          <Eyebrow>How it works</Eyebrow>
+          <h2 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-3 text-balance">
             Three steps. No middlemen.
           </h2>
         </div>
 
+        {/* `accent` only on the first card per the "≤1 accent card per viewport"
+            rule. The numbered "01" already does the wayfinding work. */}
         <div className="grid md:grid-cols-3 gap-5">
-          {steps.map((s) => (
-            <Card key={s.n} accent className="flex flex-col h-full">
-              <span className="text-display text-stamp-orange text-2xl mb-6">
+          {steps.map((s, i) => (
+            <Card key={s.n} accent={i === 0} className="flex flex-col h-full">
+              <span className="font-display text-display-sm text-stamp-orange mb-6">
                 {s.n}
               </span>
-              <h3 className="text-display text-xl mb-3 text-balance">{s.title}</h3>
-              <p className="text-stamp-white/80 text-sm leading-relaxed">{s.body}</p>
+              <h3 className="font-display text-display-xs text-stamp-white mb-3 text-balance">
+                {s.title}
+              </h3>
+              <p className="text-stamp-white text-sm leading-relaxed">{s.body}</p>
               <p className="text-stamp-muted text-xs mt-4 pt-4 border-t border-stamp-border italic">
                 {s.detail}
               </p>

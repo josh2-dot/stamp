@@ -17,6 +17,7 @@ const config: Config = {
           gold: "#F5C842",
           white: "#F7F6F2",
           muted: "#6B6B8A",
+          "muted-2": "#9696B5",
           green: "#2DBD6E",
           red: "#E84040",
         },
@@ -24,6 +25,20 @@ const config: Config = {
       fontFamily: {
         display: ["var(--font-syne)", "system-ui", "sans-serif"],
         sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
+      },
+      fontSize: {
+        // Display scale — pair with `font-display` for the Syne ExtraBold + tracking.
+        // Use the responsive prefixes (sm:, lg:) when a headline needs to scale up.
+        //   display-xl  → Hero only
+        //   display-lg  → Page H1
+        //   display-md  → Section H2, primary action moments (e.g. checkout headline)
+        //   display-sm  → Card H3, sub-section
+        //   display-xs  → Tile H4, kicker
+        "display-xl": ["4.5rem", { lineHeight: "0.95", letterSpacing: "-0.025em", fontWeight: "800" }],
+        "display-lg": ["3.5rem", { lineHeight: "0.95", letterSpacing: "-0.02em", fontWeight: "800" }],
+        "display-md": ["2.5rem", { lineHeight: "1", letterSpacing: "-0.015em", fontWeight: "800" }],
+        "display-sm": ["1.75rem", { lineHeight: "1.1", letterSpacing: "-0.01em", fontWeight: "800" }],
+        "display-xs": ["1.25rem", { lineHeight: "1.2", letterSpacing: "-0.005em", fontWeight: "800" }],
       },
       borderRadius: {
         sm: "8px",

@@ -1,4 +1,5 @@
 import { StampSeal } from "@/components/ui/StampSeal";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 
 export function Footer() {
   return (
@@ -6,13 +7,12 @@ export function Footer() {
       <div className="max-w-6xl mx-auto px-6">
         <div className="grid md:grid-cols-[auto_1fr_1fr_1fr] gap-12 items-start">
           <div>
+            {/* Sign-off use of the seal — DESIGN.md ✅ */}
             <StampSeal size={80} />
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-stamp-muted font-medium mb-4">
-              Product
-            </p>
+            <Eyebrow className="mb-4">Product</Eyebrow>
             <ul className="space-y-2 text-sm">
               <li><a href="#how" className="hover:text-stamp-orange transition-colors">How it works</a></li>
               <li><a href="#pricing" className="hover:text-stamp-orange transition-colors">Pricing</a></li>
@@ -21,9 +21,7 @@ export function Footer() {
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-stamp-muted font-medium mb-4">
-              Support
-            </p>
+            <Eyebrow className="mb-4">Support</Eyebrow>
             <ul className="space-y-2 text-sm">
               <li><a href="https://wa.me/2348012345678" className="hover:text-stamp-orange transition-colors">WhatsApp us</a></li>
               <li><a href="mailto:hi@stamptickets.ng" className="hover:text-stamp-orange transition-colors">hi@stamptickets.ng</a></li>
@@ -31,9 +29,7 @@ export function Footer() {
           </div>
 
           <div>
-            <p className="text-xs uppercase tracking-[0.2em] text-stamp-muted font-medium mb-4">
-              Legal
-            </p>
+            <Eyebrow className="mb-4">Legal</Eyebrow>
             <ul className="space-y-2 text-sm">
               <li><a href="/terms" className="hover:text-stamp-orange transition-colors">Terms</a></li>
               <li><a href="/privacy" className="hover:text-stamp-orange transition-colors">Privacy</a></li>

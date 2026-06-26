@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardLabel } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { StampSeal } from "@/components/ui/StampSeal";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { formatNaira, validateNigerianPhone } from "@/lib/format";
 import type { Event, TicketTier, CheckoutResponse } from "@/types";
 
@@ -69,8 +69,12 @@ export function CheckoutPanel({ event, tier }: CheckoutPanelProps) {
       {/* Form */}
       <Card className="space-y-5">
         <div>
-          <CardLabel>Your details</CardLabel>
-          <h2 className="text-display text-2xl mt-2">Almost there.</h2>
+          <Eyebrow>Your details</Eyebrow>
+          {/* Was text-2xl — the audit's named example. The buy moment deserves
+              the section-headline scale, not card-header scale. */}
+          <h2 className="font-display text-display-md text-stamp-white mt-2 text-balance">
+            Almost there.
+          </h2>
         </div>
 
         <Input
@@ -108,16 +112,20 @@ export function CheckoutPanel({ event, tier }: CheckoutPanelProps) {
           </div>
         )}
 
+        {/* glow + label stays semantic; spinner carries the loading signal alone.
+            Was: {loading ? "Starting payment…" : `Pay ${total}`} — both states + dim
+            + spinner was three loading cues for one action. */}
         <Button
           fullWidth
           size="lg"
+          glow
           onClick={handlePay}
           loading={loading}
         >
-          {loading ? "Starting payment…" : `Pay ${formatNaira(total)}`}
+          Pay {formatNaira(total)}
         </Button>
 
-        <p className="text-xs text-stamp-muted text-center">
+        <p className="text-xs text-stamp-muted-2 text-center">
           You'll be redirected to Paystack to complete payment securely.
         </p>
       </Card>
@@ -125,14 +133,14 @@ export function CheckoutPanel({ event, tier }: CheckoutPanelProps) {
       {/* Summary */}
       <div className="space-y-4">
         <Card accent elevated>
-          <CardLabel>Order summary</CardLabel>
+          <Eyebrow>Order summary</Eyebrow>
 
           <div className="mt-5 space-y-2">
-            <p className="text-xs uppercase tracking-[0.2em] text-stamp-muted">
-              Event
+            <Eyebrow>Event</Eyebrow>
+            <p className="font-display text-display-xs text-stamp-white text-balance">
+              {event.title}
             </p>
-            <p className="text-display text-xl text-balance">{event.title}</p>
-            <p className="text-stamp-muted text-sm">
+            <p className="text-stamp-muted-2 text-sm">
               {new Date(event.event_date).toLocaleDateString("en-NG", {
                 weekday: "short",
                 month: "short",
@@ -145,32 +153,30 @@ export function CheckoutPanel({ event, tier }: CheckoutPanelProps) {
 
           <div className="mt-6 pt-6 border-t border-stamp-border space-y-3 text-sm">
             <div className="flex justify-between">
-              <span className="text-stamp-muted">Tier</span>
+              <span className="text-stamp-muted-2">Tier</span>
               <span>{tier.name}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-stamp-muted">Face value</span>
+              <span className="text-stamp-muted-2">Face value</span>
               <span>{formatNaira(tier.price)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-stamp-muted">Service fee</span>
+              <span className="text-stamp-muted-2">Service fee</span>
               <span>{formatNaira(tier.service_fee)}</span>
             </div>
           </div>
 
           <div className="mt-4 pt-4 border-t border-stamp-border flex items-baseline justify-between">
-            <span className="text-xs uppercase tracking-[0.2em] text-stamp-muted">
-              You pay
-            </span>
-            <span className="text-display text-3xl text-stamp-orange">
+            <Eyebrow>You pay</Eyebrow>
+            <span className="font-display text-display-sm text-stamp-orange">
               {formatNaira(total)}
             </span>
           </div>
         </Card>
 
-        <div className="flex items-center justify-center pt-2 opacity-30">
-          <StampSeal size={120} />
-        </div>
+        {/* Decorative seal removed — the seal belongs on the success page,
+            which IS the verification moment. Putting it here as wallpaper at
+            30% opacity dilutes its impact when it actually fires. */}
       </div>
     </div>
   );

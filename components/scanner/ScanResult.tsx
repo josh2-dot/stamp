@@ -1,11 +1,21 @@
 import { cn } from "@/lib/cn";
+import { StampSeal } from "@/components/ui/StampSeal";
 import type { VerifyResponse } from "@/types";
 
 interface ScanResultProps {
   result: VerifyResponse;
 }
 
-const reasonText: Record<string, string> = {
+// Short codes that fit the seal's footer slot (letter-spaced, narrow band).
+// Long reasons get truncated cleanly into the same visual rhythm as ADMIT.
+const denyFooter: Record<string, string> = {
+  already_scanned: "USED",
+  invalid: "INVALID",
+  wrong_event: "WRONG EVENT",
+  unpaid: "UNPAID",
+};
+
+const denyReason: Record<string, string> = {
   already_scanned: "Already used",
   invalid: "Invalid ticket",
   wrong_event: "Different event",
@@ -25,60 +35,51 @@ export function ScanResult({ result }: ScanResultProps) {
       )}
       style={{ animation: "stamp-fade-in 0.15s ease-out" }}
     >
-      {/* Big check or X */}
-      <div className="mb-6">
-        {valid ? (
-          <svg
-            viewBox="0 0 100 100"
-            width={140}
-            height={140}
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <circle cx="50" cy="50" r="46" fill="none" stroke="#0A0A14" strokeWidth="3" />
-            <path
-              d="M30 52 L45 67 L72 38"
-              fill="none"
-              stroke="#0A0A14"
-              strokeWidth="8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        ) : (
-          <svg
-            viewBox="0 0 100 100"
-            width={140}
-            height={140}
-            xmlns="http://www.w3.org/2000/svg"
-            aria-hidden="true"
-          >
-            <circle cx="50" cy="50" r="46" fill="none" stroke="#0A0A14" strokeWidth="3" />
-            <path
-              d="M32 32 L68 68 M68 32 L32 68"
-              stroke="#0A0A14"
-              strokeWidth="8"
-              strokeLinecap="round"
-            />
-          </svg>
-        )}
+      {/*
+        The brand mark IS the gate decision. The seal "stamps" the screen —
+        carrying ADMIT or DENY as its centerText, and a short code (tier or
+        reason) in the footer slot. This pays off the entire seal investment
+        the audit called out: the seal at full intensity, exactly where the
+        product earns it.
+
+        currentColor on the seal SVG inherits text-stamp-black so the imprint
+        reads as ink on the green/red field, not a separate color.
+      */}
+      <div className="text-stamp-black mb-8">
+        <StampSeal
+          size={260}
+          tilt
+          centerText={valid ? "ADMIT" : "DENY"}
+          footerText={
+            valid
+              ? (result.ticket.tierName?.toUpperCase() ?? "TICKET")
+              : (denyFooter[result.reason] ?? "REJECTED")
+          }
+          arcText={
+            valid
+              ? `ADMIT · ${result.ticket.tierName?.toUpperCase() ?? "TICKET"} · `
+              : "DENY · DO NOT ADMIT · "
+          }
+        />
       </div>
 
-      <h2 className="text-display text-5xl text-stamp-black">
-        {valid ? "ADMIT" : "DENY"}
-      </h2>
-
-      <div className="mt-6 px-6 py-3 bg-stamp-black/10 rounded-lg text-stamp-black">
+      <div className="px-6 py-4 bg-stamp-black/10 rounded-lg text-stamp-black max-w-sm">
         {valid ? (
           <>
-            <p className="font-semibold">{result.ticket.buyerName ?? "Anonymous"}</p>
-            <p className="text-sm mt-1">{result.ticket.tierName}</p>
+            <p className="font-display text-display-sm">
+              {result.ticket.buyerName ?? "Anonymous"}
+            </p>
+            {result.ticket.tierName && (
+              <p className="text-sm mt-1 opacity-80">{result.ticket.tierName}</p>
+            )}
           </>
         ) : (
           <>
-            <p className="font-semibold">{reasonText[result.reason] ?? "Rejected"}</p>
+            <p className="font-display text-display-sm">
+              {denyReason[result.reason] ?? "Rejected"}
+            </p>
             {"usedAt" in result && result.usedAt && (
-              <p className="text-sm mt-1">
+              <p className="text-sm mt-1 opacity-80">
                 Scanned{" "}
                 {new Date(result.usedAt).toLocaleTimeString("en-NG", {
                   hour: "2-digit",
@@ -90,7 +91,7 @@ export function ScanResult({ result }: ScanResultProps) {
         )}
       </div>
 
-      <p className="absolute bottom-10 text-stamp-black/70 text-xs tracking-[0.3em] uppercase">
+      <p className="absolute bottom-10 text-stamp-black/70 text-xs tracking-[0.2em] uppercase">
         Auto-resets in 2.5s
       </p>
     </div>
