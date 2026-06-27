@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageShell } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -9,12 +10,48 @@ import { Input } from "@/components/ui/Input";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 
-type State = "idle" | "sending" | "sent" | "error";
+type State = "idle" | "sending" | "sent" | "error" | "exchanging";
 
 export default function LoginPage() {
+  const router = useRouter();
+  const sp = useSearchParams();
   const [email, setEmail] = useState("");
   const [state, setState] = useState<State>("idle");
   const [error, setError] = useState<string | null>(null);
+
+  // Implicit-flow fallback. If Supabase returns tokens via URL fragment
+  // instead of a ?code query (happens for `type=signup` and some other
+  // legacy email templates), the server callback redirects here with
+  // ?error=missing_code while the browser still has the tokens in the hash.
+  // We parse them, set the session client-side, and push to the next page.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (!window.location.hash) return;
+
+    const hash = new URLSearchParams(window.location.hash.slice(1));
+    const access_token = hash.get("access_token");
+    const refresh_token = hash.get("refresh_token");
+    if (!access_token || !refresh_token) return;
+
+    setState("exchanging");
+    const supabase = createBrowserSupabase();
+    supabase.auth
+      .setSession({ access_token, refresh_token })
+      .then(({ error: setErr }) => {
+        if (setErr) {
+          console.error("[login] implicit flow setSession failed", setErr);
+          setError(setErr.message);
+          setState("error");
+          // Clear the hash so refreshing doesn't retry forever
+          window.history.replaceState(null, "", window.location.pathname);
+          return;
+        }
+        const next = sp.get("next") ?? "/dashboard";
+        // Clean the URL before navigating
+        window.history.replaceState(null, "", window.location.pathname);
+        router.replace(next);
+      });
+  }, [router, sp]);
 
   const handleSend = async () => {
     setError(null);
@@ -42,6 +79,23 @@ export default function LoginPage() {
 
     setState("sent");
   };
+
+  // Show the "exchanging" state while we process implicit-flow tokens
+  if (state === "exchanging") {
+    return (
+      <PageShell maxWidth="sm">
+        <div className="text-center">
+          <Eyebrow align="center">Signing you in</Eyebrow>
+          <h1 className="font-display text-display-md text-stamp-white mt-2">
+            One moment.
+          </h1>
+          <p className="text-stamp-muted-2 text-sm mt-3">
+            Completing your sign-in.
+          </p>
+        </div>
+      </PageShell>
+    );
+  }
 
   return (
     <PageShell maxWidth="sm">
