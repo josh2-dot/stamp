@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PageShell } from "@/components/ui/PageShell";
@@ -37,7 +37,32 @@ function mapAuthError(message: string): string {
   return message;
 }
 
+// Next.js 14 requires useSearchParams() to be wrapped in a Suspense boundary,
+// otherwise it bails out of static prerendering with an error. We split the
+// page so the outer default-exported component owns the boundary, and the
+// inner component (which actually reads search params) renders inside it.
 export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginPageFallback />}>
+      <LoginPageInner />
+    </Suspense>
+  );
+}
+
+function LoginPageFallback() {
+  return (
+    <PageShell maxWidth="sm">
+      <div className="text-center">
+        <Eyebrow align="center">Organizer access</Eyebrow>
+        <h1 className="font-display text-display-md text-stamp-white mt-2">
+          Loading…
+        </h1>
+      </div>
+    </PageShell>
+  );
+}
+
+function LoginPageInner() {
   const router = useRouter();
   const sp = useSearchParams();
 
