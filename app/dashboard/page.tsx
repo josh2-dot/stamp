@@ -26,11 +26,20 @@ export default async function DashboardPage() {
     return (
       <PageShell maxWidth="sm">
         <h1 className="font-display text-display-md text-stamp-white text-center">
-          Account setup in progress
+          Account not found
         </h1>
         <p className="text-stamp-muted-2 mt-3 text-center">
-          Refresh in a few seconds.
+          Your sign-in worked, but we don't have an organizer record for you.
+          That's a setup bug on our side — message us on WhatsApp and we'll fix it.
         </p>
+        <div className="text-center mt-6">
+          <a
+            href="https://wa.me/2348012345678"
+            className="text-stamp-orange hover:underline"
+          >
+            Message support →
+          </a>
+        </div>
       </PageShell>
     );
   }
