@@ -1,6 +1,5 @@
 import { forwardRef, type ButtonHTMLAttributes, type HTMLAttributes, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
-import { Eyebrow } from "./Eyebrow";
 
 type Tone = "default" | "warning" | "success" | "danger" | "accent";
 
@@ -131,19 +130,3 @@ export const SelectableCard = forwardRef<HTMLButtonElement, SelectableCardProps>
     );
   },
 );
-
-// ============================================================
-// Backward-compat: CardLabel = Eyebrow (align left).
-// Existing call sites continue to work; Pass B will sweep imports
-// to use <Eyebrow> directly.
-// ============================================================
-
-export function CardLabel({
-  children,
-  className,
-}: {
-  children: ReactNode;
-  className?: string;
-}) {
-  return <Eyebrow className={className}>{children}</Eyebrow>;
-}

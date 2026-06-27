@@ -42,19 +42,21 @@ export function WithdrawalRow({
     <div className="py-4 flex items-center justify-between gap-4">
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-3">
-          <p className="text-display text-xl tabular-nums">{formatNaira(amount)}</p>
+          <p className="font-display text-display-xs text-stamp-white tabular-nums">
+            {formatNaira(amount)}
+          </p>
           <Badge tone={statusTone[status]} dot={status === "processing"}>
             {statusLabel[status]}
           </Badge>
         </div>
-        <p className="text-xs text-stamp-muted mt-1">
+        <p className="text-xs text-stamp-muted-2 mt-1">
           {new Date(ts).toLocaleString("en-NG", {
             dateStyle: "medium",
             timeStyle: "short",
             timeZone: "Africa/Lagos",
           })}
           {" · "}
-          <code className="text-stamp-muted/80">{reference}</code>
+          <code className="text-stamp-muted">{reference}</code>
         </p>
         {failureReason && (
           <p className="text-xs text-stamp-red mt-1">{failureReason}</p>

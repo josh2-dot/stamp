@@ -2,11 +2,12 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { TopNav } from "@/components/landing/TopNav";
-import { Card, CardLabel } from "@/components/ui/Card";
+import { PageShell } from "@/components/ui/PageShell";
+import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 
 interface SettingsData {
   id: string;
@@ -37,13 +38,11 @@ export default function SettingsPage() {
   const [banks, setBanks] = useState<Bank[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Profile form state
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [profileSave, setProfileSave] = useState<SaveState>("idle");
   const [profileError, setProfileError] = useState<string | null>(null);
 
-  // Payout form state
   const [bankCode, setBankCode] = useState("");
   const [accountNumber, setAccountNumber] = useState("");
   const [resolve, setResolve] = useState<ResolveState>({ kind: "idle" });
@@ -51,7 +50,6 @@ export default function SettingsPage() {
   const [payoutError, setPayoutError] = useState<string | null>(null);
   const resolveDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Initial fetch
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -87,10 +85,8 @@ export default function SettingsPage() {
     };
   }, []);
 
-  // Auto-resolve when bank + account number look valid
   useEffect(() => {
     if (!bankCode || accountNumber.replace(/\D/g, "").length !== 10) {
-      // Reset to either previously-saved state or idle
       if (data?.account_name && data.bank_code === bankCode && data.account_number === accountNumber) {
         setResolve({ kind: "ok", name: data.account_name });
       } else {
@@ -99,7 +95,6 @@ export default function SettingsPage() {
       return;
     }
 
-    // Skip resolution if it matches what's saved
     if (
       data &&
       data.bank_code === bankCode &&
@@ -233,188 +228,187 @@ export default function SettingsPage() {
 
   if (error) {
     return (
-      <>
-        <TopNav />
-        <main className="max-w-md mx-auto px-6 pt-40 text-center">
-          <h1 className="text-display text-2xl">Couldn't load settings</h1>
-          <p className="text-stamp-muted mt-3">{error}</p>
-        </main>
-      </>
+      <PageShell maxWidth="sm">
+        <div className="text-center">
+          <h1 className="font-display text-display-md text-stamp-white">
+            Couldn't load settings
+          </h1>
+          <p className="text-stamp-muted-2 mt-3">{error}</p>
+        </div>
+      </PageShell>
     );
   }
 
   if (!data) {
     return (
-      <>
-        <TopNav />
-        <main className="max-w-3xl mx-auto px-6 pt-32 pb-24">
-          <div className="animate-stamp-pulse space-y-4">
-            <div className="h-8 w-64 bg-stamp-surface rounded-md" />
-            <div className="h-48 bg-stamp-surface rounded-lg" />
-            <div className="h-48 bg-stamp-surface rounded-lg" />
-          </div>
-        </main>
-      </>
+      <PageShell maxWidth="lg">
+        <div className="animate-stamp-pulse space-y-4">
+          <div className="h-8 w-64 bg-stamp-surface rounded-md" />
+          <div className="h-48 bg-stamp-surface rounded-lg" />
+          <div className="h-48 bg-stamp-surface rounded-lg" />
+        </div>
+      </PageShell>
     );
   }
 
   const payoutComplete = !!data.account_name && !!data.bank_code && !!data.paystack_recipient_code;
 
   return (
-    <>
-      <TopNav />
-      <main className="max-w-3xl mx-auto px-6 pt-32 pb-24">
-        <Link
-          href="/dashboard"
-          className="inline-flex items-center gap-2 text-sm text-stamp-muted hover:text-stamp-white transition-colors mb-6"
-        >
-          ← Back to dashboard
-        </Link>
+    <PageShell maxWidth="lg">
+      <Link
+        href="/dashboard"
+        className="inline-flex items-center gap-2 text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors mb-6"
+      >
+        ← Back to dashboard
+      </Link>
 
-        <div className="mb-10">
-          <CardLabel>Settings</CardLabel>
-          <h1 className="text-display text-4xl mt-2">Account.</h1>
-          <p className="text-stamp-muted text-sm mt-2">
-            Signed in as <span className="text-stamp-white">{data.email}</span>
-          </p>
-        </div>
+      <div className="mb-10">
+        <Eyebrow>Settings</Eyebrow>
+        <h1 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-2">
+          Account.
+        </h1>
+        <p className="text-stamp-muted-2 text-sm mt-2">
+          Signed in as <span className="text-stamp-white">{data.email}</span>
+        </p>
+      </div>
 
-        <div className="space-y-6">
-          {/* Profile */}
-          <Card className="space-y-5">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardLabel>Profile</CardLabel>
-                <p className="text-stamp-muted text-xs mt-1">
-                  This is what buyers see and where we send organizer notifications.
-                </p>
-              </div>
-              {profileSave === "saved" && <Badge tone="success">Saved</Badge>}
-            </div>
-
-            <Input
-              label="Organization name"
-              placeholder="e.g. RSU Computer Science Society"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-
-            <Input
-              label="WhatsApp number"
-              placeholder="0801 234 5678"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              prefix="+234"
-              hint="We send live sales notifications here while events are running."
-            />
-
-            {profileError && (
-              <div className="p-3 rounded-md bg-stamp-red/10 border border-stamp-red/30 text-stamp-red text-sm">
-                {profileError}
-              </div>
-            )}
-
-            <div className="flex justify-end">
-              <Button
-                onClick={saveProfile}
-                loading={profileSave === "saving"}
-                disabled={!profileDirty}
-                variant={profileDirty ? "primary" : "secondary"}
-              >
-                Save profile
-              </Button>
-            </div>
-          </Card>
-
-          {/* Payouts */}
-          <Card className="space-y-5" accent={!payoutComplete}>
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <CardLabel>Payouts</CardLabel>
-                <p className="text-stamp-muted text-xs mt-1">
-                  Where we settle your money after each event.
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {payoutComplete ? (
-                  <Badge tone="success" dot>
-                    Verified
-                  </Badge>
-                ) : (
-                  <Badge tone="warning">Setup needed</Badge>
-                )}
-                {payoutSave === "saved" && <Badge tone="success">Saved</Badge>}
-              </div>
-            </div>
-
+      <div className="space-y-6">
+        {/* Profile */}
+        <Card className="space-y-5">
+          <div className="flex items-center justify-between">
             <div>
-              <label className="block text-xs uppercase tracking-[0.18em] text-stamp-muted font-medium mb-2">
-                Bank
-              </label>
-              <select
-                value={bankCode}
-                onChange={(e) => setBankCode(e.target.value)}
-                className="w-full bg-stamp-surface2 border border-stamp-border rounded-md px-3.5 py-2.5 text-sm text-stamp-white outline-none focus:border-stamp-orange/60 transition-colors"
-              >
-                <option value="">Pick a bank</option>
-                {banks.map((b) => (
-                  <option key={b.code} value={b.code}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+              <Eyebrow>Profile</Eyebrow>
+              <p className="text-stamp-muted-2 text-xs mt-1">
+                This is what buyers see and where we send organizer notifications.
+              </p>
             </div>
+            {profileSave === "saved" && <Badge tone="success">Saved</Badge>}
+          </div>
 
-            <Input
-              label="Account number"
-              placeholder="0123456789"
-              value={accountNumber}
-              onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
-              inputMode="numeric"
-              hint="10-digit NUBAN. We verify the account holder name with your bank."
-            />
+          <Input
+            label="Organization name"
+            placeholder="e.g. RSU Computer Science Society"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
 
-            {/* Resolution feedback */}
-            <ResolveFeedback state={resolve} />
+          <Input
+            label="WhatsApp number"
+            placeholder="0801 234 5678"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            prefix="+234"
+            hint="We send live sales notifications here while events are running."
+          />
 
-            {payoutError && (
-              <div className="p-3 rounded-md bg-stamp-red/10 border border-stamp-red/30 text-stamp-red text-sm">
-                {payoutError}
+          {profileError && (
+            <div className="p-3 rounded-md bg-stamp-red/10 border border-stamp-red/30 text-stamp-red text-sm">
+              {profileError}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button
+              onClick={saveProfile}
+              loading={profileSave === "saving"}
+              disabled={!profileDirty}
+              variant={profileDirty ? "primary" : "secondary"}
+            >
+              Save profile
+            </Button>
+          </div>
+        </Card>
+
+        {/* Payouts — accent ONLY when setup is incomplete (≤1 accent / viewport
+            rule). Once verified, this becomes a regular Card. */}
+        <Card className="space-y-5" accent={!payoutComplete} tone={!payoutComplete ? "warning" : "default"}>
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <Eyebrow accent={!payoutComplete}>Payouts</Eyebrow>
+              <p className="text-stamp-muted-2 text-xs mt-1">
+                Where we settle your money after each event.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {payoutComplete ? (
+                <Badge tone="success" dot>Verified</Badge>
+              ) : (
+                <Badge tone="warning">Setup needed</Badge>
+              )}
+              {payoutSave === "saved" && <Badge tone="success">Saved</Badge>}
+            </div>
+          </div>
+
+          <div>
+            <Eyebrow as="label" htmlFor="bank-select" className="block mb-2">
+              Bank
+            </Eyebrow>
+            <select
+              id="bank-select"
+              value={bankCode}
+              onChange={(e) => setBankCode(e.target.value)}
+              className="w-full bg-stamp-surface2 border border-stamp-border rounded-md px-3.5 py-2.5 text-sm text-stamp-white outline-none focus:border-stamp-orange/50 transition-colors"
+            >
+              <option value="">Pick a bank</option>
+              {banks.map((b) => (
+                <option key={b.code} value={b.code}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <Input
+            label="Account number"
+            placeholder="0123456789"
+            value={accountNumber}
+            onChange={(e) => setAccountNumber(e.target.value.replace(/\D/g, "").slice(0, 10))}
+            inputMode="numeric"
+            hint="10-digit NUBAN. We verify the account holder name with your bank."
+          />
+
+          <ResolveFeedback state={resolve} />
+
+          {payoutError && (
+            <div className="p-3 rounded-md bg-stamp-red/10 border border-stamp-red/30 text-stamp-red text-sm">
+              {payoutError}
+            </div>
+          )}
+
+          <div className="flex justify-end">
+            <Button
+              onClick={savePayout}
+              loading={payoutSave === "saving"}
+              disabled={!payoutDirty || resolve.kind !== "ok"}
+              variant={payoutDirty ? "primary" : "secondary"}
+            >
+              Save payout details
+            </Button>
+          </div>
+        </Card>
+
+        {/* Linked account, read-only summary — green tone is right here:
+            this IS a verification state (payout account confirmed). */}
+        {payoutComplete && !payoutDirty && (
+          <Card elevated tone="success">
+            <Eyebrow>Linked payout account</Eyebrow>
+            <div className="mt-3 flex items-baseline justify-between gap-4">
+              <div>
+                <p className="font-display text-display-xs text-stamp-white">
+                  {data.account_name}
+                </p>
+                <p className="text-stamp-muted-2 text-sm mt-1">
+                  {data.bank_name} · {maskAccount(data.account_number ?? "")}
+                </p>
               </div>
-            )}
-
-            <div className="flex justify-end">
-              <Button
-                onClick={savePayout}
-                loading={payoutSave === "saving"}
-                disabled={!payoutDirty || resolve.kind !== "ok"}
-                variant={payoutDirty ? "primary" : "secondary"}
-              >
-                Save payout details
-              </Button>
+              <Badge tone="success" dot>
+                Ready for payouts
+              </Badge>
             </div>
           </Card>
-
-          {/* Currently linked account, read-only summary */}
-          {payoutComplete && !payoutDirty && (
-            <Card elevated>
-              <CardLabel>Linked payout account</CardLabel>
-              <div className="mt-3 flex items-baseline justify-between gap-4">
-                <div>
-                  <p className="text-display text-xl">{data.account_name}</p>
-                  <p className="text-stamp-muted text-sm mt-1">
-                    {data.bank_name} · {maskAccount(data.account_number ?? "")}
-                  </p>
-                </div>
-                <Badge tone="success" dot>
-                  Ready for payouts
-                </Badge>
-              </div>
-            </Card>
-          )}
-        </div>
-      </main>
-    </>
+        )}
+      </div>
+    </PageShell>
   );
 }
 
@@ -422,8 +416,8 @@ function ResolveFeedback({ state }: { state: ResolveState }) {
   if (state.kind === "idle") return null;
   if (state.kind === "loading") {
     return (
-      <div className="flex items-center gap-3 text-sm text-stamp-muted p-3 rounded-md bg-stamp-surface2 border border-stamp-border">
-        <span className="inline-block w-3 h-3 rounded-full border-2 border-stamp-muted border-t-transparent animate-spin" />
+      <div className="flex items-center gap-3 text-sm text-stamp-muted-2 p-3 rounded-md bg-stamp-surface2 border border-stamp-border">
+        <span className="inline-block w-3 h-3 rounded-full border-2 border-stamp-muted-2 border-t-transparent animate-spin" />
         Verifying with your bank…
       </div>
     );
@@ -431,10 +425,10 @@ function ResolveFeedback({ state }: { state: ResolveState }) {
   if (state.kind === "ok") {
     return (
       <div className="p-4 rounded-md bg-stamp-green/10 border border-stamp-green/30">
-        <p className="text-xs uppercase tracking-[0.2em] text-stamp-green font-medium">
-          Account verified
+        <Eyebrow className="!text-stamp-green">Account verified</Eyebrow>
+        <p className="font-display text-display-xs text-stamp-white mt-1">
+          {state.name}
         </p>
-        <p className="text-display text-xl mt-1">{state.name}</p>
       </div>
     );
   }

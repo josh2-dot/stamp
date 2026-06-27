@@ -1,4 +1,5 @@
-import { Card, CardLabel } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { formatNaira } from "@/lib/format";
 import type { DashboardSnapshot } from "@/types";
 
@@ -19,7 +20,7 @@ export function StatsRow({ snapshot }: StatsRowProps) {
       label: "Tickets sold",
       value: snapshot.totalSold.toLocaleString(),
       sub: `${pctFull}% of capacity`,
-      accent: true,
+      primary: true,
     },
     {
       label: "Gross revenue",
@@ -39,12 +40,29 @@ export function StatsRow({ snapshot }: StatsRowProps) {
   ];
 
   return (
+    // The primary KPI ("Tickets sold") spans two columns on lg+ and uses
+    // display-lg, while the rest use display-sm. The audit named this:
+    // identical sizing across all four cells gave the dashboard no clear
+    // hero number. Now the eye lands on tickets sold first, the rest read
+    // as supporting context.
     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
       {items.map((it) => (
-        <Card key={it.label} accent={it.accent}>
-          <CardLabel>{it.label}</CardLabel>
-          <p className="text-display text-3xl lg:text-4xl mt-2">{it.value}</p>
-          <p className="text-stamp-muted text-xs mt-1">{it.sub}</p>
+        <Card
+          key={it.label}
+          accent={it.primary}
+          className={it.primary ? "lg:col-span-2" : undefined}
+        >
+          <Eyebrow>{it.label}</Eyebrow>
+          <p
+            className={
+              it.primary
+                ? "font-display text-display-md lg:text-display-lg text-stamp-white mt-2 tabular-nums"
+                : "font-display text-display-sm text-stamp-white mt-2 tabular-nums"
+            }
+          >
+            {it.value}
+          </p>
+          <p className="text-stamp-muted-2 text-xs mt-1">{it.sub}</p>
         </Card>
       ))}
     </div>

@@ -3,11 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
-import { TopNav } from "@/components/landing/TopNav";
-import { Card, CardLabel } from "@/components/ui/Card";
+import { PageShell } from "@/components/ui/PageShell";
+import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Badge } from "@/components/ui/Badge";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PosterPicker } from "@/components/event/PosterPicker";
 import { formatNaira } from "@/lib/format";
 import type { EditEventResponse } from "@/types";
@@ -325,69 +326,66 @@ export default function EditEventPage() {
 
   if (loadError) {
     return (
-      <>
-        <TopNav />
-        <main className="max-w-md mx-auto px-6 pt-40 text-center">
-          <h1 className="text-display text-2xl">{loadError}</h1>
+      <PageShell maxWidth="sm">
+        <div className="text-center">
+          <h1 className="font-display text-display-md text-stamp-white">{loadError}</h1>
           <Link href="/dashboard" className="text-stamp-orange mt-6 inline-block hover:underline">
             ← Back to events
           </Link>
-        </main>
-      </>
+        </div>
+      </PageShell>
     );
   }
 
   if (!event) {
     return (
-      <>
-        <TopNav />
-        <main className="max-w-3xl mx-auto px-6 pt-32 pb-24">
-          <div className="animate-stamp-pulse space-y-4">
-            <div className="h-8 w-48 bg-stamp-surface rounded-md" />
-            <div className="h-64 bg-stamp-surface rounded-lg" />
-            <div className="h-64 bg-stamp-surface rounded-lg" />
-          </div>
-        </main>
-      </>
+      <PageShell maxWidth="lg">
+        <div className="animate-stamp-pulse space-y-4">
+          <div className="h-8 w-48 bg-stamp-surface rounded-md" />
+          <div className="h-64 bg-stamp-surface rounded-lg" />
+          <div className="h-64 bg-stamp-surface rounded-lg" />
+        </div>
+      </PageShell>
     );
   }
 
   return (
-    <>
-      <TopNav />
-      <main className="max-w-3xl mx-auto px-6 pt-32 pb-24">
-        <Link
-          href={`/dashboard/events/${params.id}`}
-          className="inline-flex items-center gap-2 text-sm text-stamp-muted hover:text-stamp-white transition-colors mb-6"
-        >
-          ← Back to dashboard
-        </Link>
+    <PageShell maxWidth="lg">
+      <Link
+        href={`/dashboard/events/${params.id}`}
+        className="inline-flex items-center gap-2 text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors mb-6"
+      >
+        ← Back to dashboard
+      </Link>
 
-        <div className="flex items-start justify-between gap-4 mb-10 flex-wrap">
-          <div>
-            <CardLabel>Editing</CardLabel>
-            <h1 className="text-display text-4xl mt-2 text-balance">{event.title}</h1>
-          </div>
-          <Badge tone={event.is_active ? "success" : "warning"} dot={event.is_active}>
-            {event.is_active ? "Live" : "Deactivated"}
-          </Badge>
+      <div className="flex items-start justify-between gap-4 mb-10 flex-wrap">
+        <div>
+          <Eyebrow>Editing</Eyebrow>
+          <h1 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-2 text-balance">
+            {event.title}
+          </h1>
         </div>
+        {/* "Live" = active sales, not gate verification. Default tone + dot. */}
+        <Badge tone={event.is_active ? "default" : "warning"} dot={event.is_active}>
+          {event.is_active ? "Live" : "Deactivated"}
+        </Badge>
+      </div>
 
-        {!event.is_active && (
-          <Card className="mb-6 border-stamp-gold/40 bg-stamp-gold/5">
-            <p className="text-xs uppercase tracking-[0.2em] text-stamp-gold font-medium">
-              Deactivated
-            </p>
-            <p className="text-sm mt-1 text-stamp-white/90">
-              The public event page is hidden and no new tickets can be sold. Existing tickets still work at the scanner. Reactivate to put it back on sale.
-            </p>
-          </Card>
-        )}
+      {!event.is_active && (
+        // Was: className="border-stamp-gold/40 bg-stamp-gold/5" — one-off
+        // override replaced with tone="warning" Card variant.
+        <Card className="mb-6 bg-stamp-gold/5" tone="warning">
+          <Eyebrow className="!text-stamp-gold">Deactivated</Eyebrow>
+          <p className="text-sm mt-1 text-stamp-white">
+            The public event page is hidden and no new tickets can be sold. Existing tickets still work at the scanner. Reactivate to put it back on sale.
+          </p>
+        </Card>
+      )}
 
         <div className="space-y-6">
           {/* Event details */}
           <Card className="space-y-5">
-            <CardLabel>Event details</CardLabel>
+            <Eyebrow>Event details</Eyebrow>
             <Input
               label="Event title"
               value={title}
@@ -406,14 +404,15 @@ export default function EditEventPage() {
               hint="Lagos time (WAT)."
             />
             <div>
-              <label className="block text-xs uppercase tracking-[0.18em] text-stamp-muted font-medium mb-2">
+              <Eyebrow as="label" htmlFor="edit-description" className="block mb-2">
                 Description
-              </label>
+              </Eyebrow>
               <textarea
+                id="edit-description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 rows={4}
-                className="w-full bg-stamp-surface2 border border-stamp-border rounded-md px-3.5 py-2.5 text-sm text-stamp-white placeholder:text-stamp-muted outline-none focus:border-stamp-orange/60 transition-colors resize-y"
+                className="w-full bg-stamp-surface2 border border-stamp-border rounded-md px-3.5 py-2.5 text-sm text-stamp-white placeholder:text-stamp-muted outline-none focus:border-stamp-orange/50 transition-colors resize-y"
               />
             </div>
 
@@ -431,8 +430,8 @@ export default function EditEventPage() {
           <Card className="space-y-4">
             <div className="flex items-center justify-between">
               <div>
-                <CardLabel>Ticket tiers</CardLabel>
-                <p className="text-stamp-muted text-xs mt-1">
+                <Eyebrow>Ticket tiers</Eyebrow>
+                <p className="text-stamp-muted-2 text-xs mt-1">
                   You can't drop a tier's capacity below tickets already sold, or remove a tier with sales.
                 </p>
               </div>
@@ -453,14 +452,14 @@ export default function EditEventPage() {
                     className="rounded-lg border border-stamp-border bg-stamp-surface2 p-4 space-y-3"
                   >
                     <div className="flex items-center justify-between">
-                      <span className="text-xs uppercase tracking-[0.2em] text-stamp-muted">
+                      <Eyebrow as="span">
                         Tier {idx + 1}
                         {!tier.id && (
                           <span className="ml-2 text-stamp-orange normal-case tracking-normal">
                             new
                           </span>
                         )}
-                      </span>
+                      </Eyebrow>
                       <div className="flex items-center gap-3">
                         {hasSales && (
                           <Badge tone="success">{tier.sold} sold</Badge>
@@ -511,7 +510,7 @@ export default function EditEventPage() {
                     </div>
 
                     {tier.price && tier.service_fee && (
-                      <p className="text-xs text-stamp-muted pt-1">
+                      <p className="text-xs text-stamp-muted-2 pt-1">
                         Buyer pays {formatNaira(
                           (parseFloat(tier.price) + parseFloat(tier.service_fee || "0")) * 100,
                         )}
@@ -536,7 +535,7 @@ export default function EditEventPage() {
               {event.is_active ? (
                 confirmDeactivate ? (
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-stamp-muted">Confirm?</span>
+                    <span className="text-sm text-stamp-muted-2">Confirm?</span>
                     <Button
                       variant="danger"
                       size="sm"
@@ -584,11 +583,13 @@ export default function EditEventPage() {
                   Cancel
                 </Button>
               </Link>
+              {/* glow when dirty — the one primary action on the page right now */}
               <Button
                 onClick={handleSave}
                 loading={saving}
                 disabled={!dirty}
                 variant={dirty ? "primary" : "secondary"}
+                glow={dirty}
                 size="lg"
               >
                 Save changes
@@ -596,7 +597,6 @@ export default function EditEventPage() {
             </div>
           </div>
         </div>
-      </main>
-    </>
+    </PageShell>
   );
 }

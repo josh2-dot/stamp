@@ -1,7 +1,8 @@
 "use client";
 
 import { Area, AreaChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { Card, CardLabel } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { formatNaira } from "@/lib/format";
 import type { DashboardSnapshot } from "@/types";
 
@@ -26,8 +27,8 @@ export function HourlyChart({ data }: HourlyChartProps) {
     <Card className="h-[280px] flex flex-col">
       <div className="flex items-center justify-between">
         <div>
-          <CardLabel>Sales · last 24h</CardLabel>
-          <p className="text-stamp-muted text-xs mt-1">
+          <Eyebrow>Sales · last 24h</Eyebrow>
+          <p className="text-stamp-muted-2 text-xs mt-1">
             Peak: {peak} ticket{peak === 1 ? "" : "s"} / hour
           </p>
         </div>

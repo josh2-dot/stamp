@@ -224,9 +224,12 @@ export default function ScannerPage() {
     return (
       <main className="min-h-screen flex items-center justify-center px-6">
         <div className="max-w-md text-center space-y-4">
-          <StampSeal size={80} className="mx-auto opacity-60" />
-          <h1 className="text-display text-3xl">Scanner link incomplete</h1>
-          <p className="text-stamp-muted text-sm">
+          {/* Seal removed from this empty/error state per DESIGN.md — the seal
+              is for verification moments, not "we couldn't get there" screens. */}
+          <h1 className="font-display text-display-md text-stamp-white">
+            Scanner link incomplete
+          </h1>
+          <p className="text-stamp-muted-2 text-sm">
             {authState === "missing_token"
               ? "This scanner URL is missing its access token. Open the scanner from your dashboard or ask the organizer for the full link."
               : "This scanner token is invalid or expired. Ask the organizer to re-share the scanner link from their dashboard."}
@@ -240,8 +243,10 @@ export default function ScannerPage() {
     return (
       <main className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center space-y-3">
+          {/* Seal pulse on "preparing scanner" is OK — this is the lead-in to
+              a verification surface, so the mark previewing itself is on-brand. */}
           <StampSeal size={80} className="mx-auto animate-stamp-pulse" />
-          <p className="text-stamp-muted text-sm">Preparing scanner…</p>
+          <p className="text-stamp-muted-2 text-sm">Preparing scanner…</p>
         </div>
       </main>
     );
@@ -253,7 +258,7 @@ export default function ScannerPage() {
       <div className="absolute top-0 inset-x-0 z-20 p-4 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-stamp-surface/80 backdrop-blur border border-stamp-border min-w-0">
           <StampSeal size={28} className="shrink-0" />
-          <span className="text-xs font-medium truncate">
+          <span className="text-xs font-medium truncate text-stamp-white">
             {eventTitle || "Scanner"}
           </span>
         </div>

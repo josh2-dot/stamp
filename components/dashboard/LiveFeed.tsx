@@ -1,5 +1,6 @@
-import { Card, CardLabel } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { formatNaira, formatPhoneDisplay } from "@/lib/format";
 import type { DashboardSnapshot } from "@/types";
 
@@ -26,16 +27,19 @@ export function LiveFeed({ tickets }: LiveFeedProps) {
     <Card className="flex flex-col h-[480px]">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <CardLabel>Live feed</CardLabel>
-          <p className="text-xs text-stamp-muted mt-1">Recent ticket sales</p>
+          <Eyebrow>Live feed</Eyebrow>
+          <p className="text-xs text-stamp-muted-2 mt-1">Recent ticket sales</p>
         </div>
-        <Badge tone="success" dot>Live</Badge>
+        {/* "Live" = realtime stream, not gate verification. Default tone + dot
+            per DESIGN.md. Was tone="success" → competed with the "Checked in"
+            green-on-green pattern inside the same card. */}
+        <Badge tone="default" dot>Live</Badge>
       </div>
 
       <div className="flex-1 overflow-y-auto -mx-2 px-2 space-y-1">
         {tickets.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-stamp-muted text-sm">No sales yet.</p>
+            <p className="text-stamp-muted-2 text-sm">No sales yet.</p>
             <p className="text-stamp-muted text-xs mt-1">
               Share the event link to start selling.
             </p>
@@ -49,16 +53,17 @@ export function LiveFeed({ tickets }: LiveFeedProps) {
           >
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
-                <span className="font-medium truncate">
+                <span className="font-medium truncate text-stamp-white">
                   {t.buyer_name ?? "Anonymous"}
                 </span>
+                {/* "Checked in" stays green — gate verification semantic. */}
                 {t.used && (
                   <Badge tone="success" className="!py-0">
                     Checked in
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-stamp-muted mt-0.5">
+              <p className="text-xs text-stamp-muted-2 mt-0.5">
                 {t.tier_name} · {formatPhoneDisplay(t.buyer_phone)}
               </p>
             </div>
@@ -66,7 +71,7 @@ export function LiveFeed({ tickets }: LiveFeedProps) {
               <p className="font-medium text-stamp-orange tabular-nums">
                 {formatNaira(t.amount_paid)}
               </p>
-              <p className="text-xs text-stamp-muted">{timeAgo(t.created_at)}</p>
+              <p className="text-xs text-stamp-muted-2">{timeAgo(t.created_at)}</p>
             </div>
           </div>
         ))}

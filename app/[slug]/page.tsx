@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 import { createAdminSupabase } from "@/lib/supabase/admin";
-import { TopNav } from "@/components/landing/TopNav";
+import { PageShell } from "@/components/ui/PageShell";
 import { EventHeader } from "@/components/event/EventHeader";
 import { TicketTierSelector } from "@/components/event/TicketTierSelector";
-import { StampSeal } from "@/components/ui/StampSeal";
 import type { Event, TicketTier } from "@/types";
 
 export const revalidate = 30;
@@ -27,22 +26,21 @@ export default async function EventPage({ params }: { params: { slug: string } }
     .order("sort_order", { ascending: true });
 
   return (
-    <>
-      <TopNav />
-      <main className="max-w-6xl mx-auto px-6 pt-32 pb-24">
-        <div className="grid lg:grid-cols-[1.4fr_1fr] gap-12 items-start">
-          <div>
-            <EventHeader event={event as Event} />
-          </div>
-
-          <div className="lg:sticky lg:top-32">
-            <TicketTierSelector slug={params.slug} tiers={(tiers ?? []) as TicketTier[]} />
-            <div className="mt-8 flex items-center justify-center opacity-20">
-              <StampSeal size={100} />
-            </div>
-          </div>
+    <PageShell>
+      {/* Grid was [1.4fr_1fr] — audit said the selector deserves equal weight
+          since it's the primary action of the page. Equal columns let the buy
+          action sit at the same visual mass as the marketing content. */}
+      <div className="grid lg:grid-cols-2 gap-12 items-start">
+        <div>
+          <EventHeader event={event as Event} />
         </div>
-      </main>
-    </>
+
+        {/* Decorative seal at the bottom of the sticky column removed
+            (DESIGN.md ❌ wallpaper use). */}
+        <div className="lg:sticky lg:top-32">
+          <TicketTierSelector slug={params.slug} tiers={(tiers ?? []) as TicketTier[]} />
+        </div>
+      </div>
+    </PageShell>
   );
 }

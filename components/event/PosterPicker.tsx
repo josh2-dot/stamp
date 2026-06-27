@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { CardLabel } from "@/components/ui/Card";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/cn";
 
@@ -69,7 +69,7 @@ export function PosterPicker({
 
   return (
     <div>
-      <CardLabel>Poster (optional)</CardLabel>
+      <Eyebrow>Poster (optional)</Eyebrow>
 
       <div
         onDragOver={(e) => {
@@ -130,7 +130,7 @@ export function PosterPicker({
           </div>
         ) : (
           <div className="text-center">
-            <p className="text-sm text-stamp-muted">
+            <p className="text-sm text-stamp-muted-2">
               Drag an image here, or{" "}
               <button
                 type="button"
@@ -140,7 +140,7 @@ export function PosterPicker({
                 browse
               </button>
             </p>
-            <p className="text-xs text-stamp-muted mt-2">
+            <p className="text-xs text-stamp-muted-2 mt-2">
               16:9 works best · JPG, PNG, or WebP · Max 5MB
             </p>
           </div>

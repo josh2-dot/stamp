@@ -3,13 +3,14 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { TopNav } from "@/components/landing/TopNav";
+import { PageShell } from "@/components/ui/PageShell";
 import { StatsRow } from "@/components/dashboard/StatsRow";
 import { TierBreakdown } from "@/components/dashboard/TierBreakdown";
 import { HourlyChart } from "@/components/dashboard/HourlyChart";
 import { LiveFeed } from "@/components/dashboard/LiveFeed";
 import { Badge } from "@/components/ui/Badge";
-import { Card, CardLabel } from "@/components/ui/Card";
+import { Card } from "@/components/ui/Card";
+import { Eyebrow } from "@/components/ui/Eyebrow";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { DashboardSnapshot } from "@/types";
 
@@ -45,14 +46,12 @@ export default function EventDashboardPage() {
           filter: `event_id=eq.${params.id}`,
         },
         () => {
-          // On any change, re-fetch the snapshot. Cheap, simple, correct.
           fetchSnapshot();
           setPulse((p) => p + 1);
         },
       )
       .subscribe();
 
-    // Refresh every 30s as belt-and-suspenders for realtime hiccups
     const interval = setInterval(fetchSnapshot, 30_000);
 
     return () => {
@@ -64,51 +63,50 @@ export default function EventDashboardPage() {
 
   if (error) {
     return (
-      <>
-        <TopNav />
-        <main className="max-w-2xl mx-auto px-6 pt-40 text-center">
-          <h1 className="text-display text-3xl">Couldn't load dashboard</h1>
-          <p className="text-stamp-muted mt-3">{error}</p>
+      <PageShell maxWidth="md">
+        <div className="text-center">
+          <h1 className="font-display text-display-md text-stamp-white">
+            Couldn't load dashboard
+          </h1>
+          <p className="text-stamp-muted-2 mt-3">{error}</p>
           <Link href="/dashboard" className="text-stamp-orange mt-6 inline-block hover:underline">
             ← Back to events
           </Link>
-        </main>
-      </>
+        </div>
+      </PageShell>
     );
   }
 
   if (!snapshot) {
     return (
-      <>
-        <TopNav />
-        <main className="max-w-6xl mx-auto px-6 pt-32 pb-24">
-          <div className="space-y-4 animate-stamp-pulse">
-            <div className="h-8 w-64 bg-stamp-surface rounded-md" />
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="h-28 bg-stamp-surface rounded-lg" />
-              ))}
-            </div>
+      <PageShell>
+        <div className="space-y-4 animate-stamp-pulse">
+          <div className="h-8 w-64 bg-stamp-surface rounded-md" />
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-28 bg-stamp-surface rounded-lg" />
+            ))}
           </div>
-        </main>
-      </>
+        </div>
+      </PageShell>
     );
   }
 
   const ev = snapshot.event;
 
   return (
-    <>
-      <TopNav />
-      <main className="max-w-6xl mx-auto px-6 pt-32 pb-24 space-y-6">
+    <PageShell>
+      <div className="space-y-6">
         {/* Header */}
         <div className="flex items-end justify-between gap-4 flex-wrap">
           <div>
-            <Link href="/dashboard" className="text-xs text-stamp-muted hover:text-stamp-white transition-colors">
+            <Link href="/dashboard" className="text-xs text-stamp-muted-2 hover:text-stamp-white transition-colors">
               ← All events
             </Link>
-            <h1 className="text-display text-3xl sm:text-4xl mt-2 text-balance">{ev.title}</h1>
-            <p className="text-stamp-muted text-sm mt-1">
+            <h1 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-2 text-balance">
+              {ev.title}
+            </h1>
+            <p className="text-stamp-muted-2 text-sm mt-1">
               {new Date(ev.event_date).toLocaleDateString("en-NG", {
                 weekday: "long",
                 month: "long",
@@ -119,10 +117,15 @@ export default function EventDashboardPage() {
             </p>
           </div>
           <div className="flex items-center gap-3 flex-wrap">
-            <Badge tone={ev.is_active ? "success" : "warning"} dot={ev.is_active} key={pulse}>
+            {/* Live here = active sales (not gate verification). Default tone + dot. */}
+            <Badge
+              tone={ev.is_active ? "default" : "warning"}
+              dot={ev.is_active}
+              key={pulse}
+            >
               {ev.is_active ? "Live" : "Deactivated"}
             </Badge>
-            <Link href={`/dashboard/events/${ev.id}/edit`} className="text-sm text-stamp-muted hover:text-stamp-white transition-colors">
+            <Link href={`/dashboard/events/${ev.id}/edit`} className="text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors">
               Edit
             </Link>
             <Link
@@ -135,13 +138,13 @@ export default function EventDashboardPage() {
         </div>
 
         {!ev.is_active && (
-          <Card className="border-stamp-gold/40 bg-stamp-gold/5">
+          // Was: className="border-stamp-gold/40 bg-stamp-gold/5" — one-off
+          // override replaced with tone="warning" Card variant.
+          <Card tone="warning" className="bg-stamp-gold/5">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <p className="text-xs uppercase tracking-[0.2em] text-stamp-gold font-medium">
-                  Event deactivated
-                </p>
-                <p className="text-sm mt-1 text-stamp-white/90">
+                <Eyebrow className="!text-stamp-gold">Event deactivated</Eyebrow>
+                <p className="text-sm mt-1 text-stamp-white">
                   New ticket sales are paused. Existing tickets still scan at the door.
                 </p>
               </div>
@@ -162,7 +165,7 @@ export default function EventDashboardPage() {
 
             {/* Share link */}
             <Card>
-              <CardLabel>Event link</CardLabel>
+              <Eyebrow>Event link</Eyebrow>
               <div className="mt-3 flex items-center gap-2">
                 <code className="flex-1 text-sm text-stamp-orange truncate p-3 bg-stamp-surface2 rounded-md border border-stamp-border">
                   {process.env.NEXT_PUBLIC_APP_URL}/{ev.slug}
@@ -173,8 +176,8 @@ export default function EventDashboardPage() {
 
             {/* Scanner link — token-bound, share only with door staff */}
             <Card>
-              <CardLabel>Door scanner link</CardLabel>
-              <p className="text-xs text-stamp-muted mt-1">
+              <Eyebrow>Door scanner link</Eyebrow>
+              <p className="text-xs text-stamp-muted-2 mt-1">
                 Send this to whoever's checking tickets at the door. The link
                 includes an access token — don't share it publicly.
               </p>
@@ -191,8 +194,8 @@ export default function EventDashboardPage() {
 
           <LiveFeed tickets={snapshot.recentTickets} />
         </div>
-      </main>
-    </>
+      </div>
+    </PageShell>
   );
 }
 
@@ -206,7 +209,7 @@ function CopyButton({ text }: { text: string }) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="px-4 py-3 rounded-md border border-stamp-border bg-stamp-surface2 text-sm hover:border-stamp-orange transition-colors"
+      className="px-4 py-3 rounded-md border border-stamp-border bg-stamp-surface2 text-sm text-stamp-white hover:border-stamp-orange transition-colors"
     >
       {copied ? "✓ Copied" : "Copy"}
     </button>

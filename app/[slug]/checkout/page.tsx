@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { createAdminSupabase } from "@/lib/supabase/admin";
-import { TopNav } from "@/components/landing/TopNav";
+import { PageShell } from "@/components/ui/PageShell";
 import { CheckoutPanel } from "@/components/event/CheckoutPanel";
 import type { Event, TicketTier } from "@/types";
 
@@ -38,18 +38,15 @@ export default async function CheckoutPage({
   if (!tier) notFound();
 
   return (
-    <>
-      <TopNav />
-      <main className="max-w-5xl mx-auto px-6 pt-32 pb-24">
-        <Link
-          href={`/${params.slug}`}
-          className="inline-flex items-center gap-2 text-sm text-stamp-muted hover:text-stamp-white transition-colors mb-8"
-        >
-          ← Back to event
-        </Link>
+    <PageShell maxWidth="lg">
+      <Link
+        href={`/${params.slug}`}
+        className="inline-flex items-center gap-2 text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors mb-8"
+      >
+        ← Back to event
+      </Link>
 
-        <CheckoutPanel event={event as Event} tier={tier as TicketTier} />
-      </main>
-    </>
+      <CheckoutPanel event={event as Event} tier={tier as TicketTier} />
+    </PageShell>
   );
 }
