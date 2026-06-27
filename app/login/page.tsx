@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { PageShell } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
@@ -63,7 +63,6 @@ function LoginPageFallback() {
 }
 
 function LoginPageInner() {
-  const router = useRouter();
   const sp = useSearchParams();
 
   const [mode, setMode] = useState<Mode>("signin");
@@ -102,10 +101,12 @@ function LoginPageInner() {
           return;
         }
         const next = sp.get("next") ?? "/dashboard";
-        window.history.replaceState(null, "", window.location.pathname);
-        router.replace(next);
+        // Hard nav, same reasoning as the password handlers — we're
+        // transitioning from unauthenticated to authenticated, and the
+        // soft-nav router methods race with RSC payload caching.
+        window.location.assign(next);
       });
-  }, [router, sp]);
+  }, [sp]);
 
   const trimmedEmail = email.trim().toLowerCase();
   const validEmail = trimmedEmail.includes("@") && trimmedEmail.length > 3;
@@ -124,21 +125,42 @@ function LoginPageInner() {
     }
 
     setState("submitting");
-    const supabase = createBrowserSupabase();
-    const { error: err } = await supabase.auth.signInWithPassword({
-      email: trimmedEmail,
-      password,
-    });
+    try {
+      const supabase = createBrowserSupabase();
+      const { error: err } = await supabase.auth.signInWithPassword({
+        email: trimmedEmail,
+        password,
+      });
 
-    if (err) {
-      setError(mapAuthError(err.message));
+      if (err) {
+        setError(mapAuthError(err.message));
+        setState("error");
+        return;
+      }
+
+      // Use a hard navigation rather than router.replace + router.refresh.
+      // The soft-nav combo races with Next.js's RSC payload cache during
+      // the unauthenticated → authenticated transition: the browser serves
+      // the cached /login RSC payload (304), middleware never runs, and
+      // router.replace gets eaten by the refresh. window.location.assign
+      // forces a fresh request with the new session cookie attached,
+      // middleware sees the logged-in user, and the redirect to /dashboard
+      // happens cleanly server-side.
+      const next = sp.get("next") ?? "/dashboard";
+      window.location.assign(next);
+    } catch (err) {
+      // Network failures, CORS, browser-extension blocks, fetch aborts —
+      // anything that throws before Supabase can return a structured error.
+      // Without this catch, state stays "submitting" forever and the button
+      // spins indefinitely.
+      console.error("[login] signInWithPassword threw", err);
+      setError(
+        err instanceof Error && err.message
+          ? `Couldn't reach the server: ${err.message}`
+          : "Couldn't reach the server. Check your connection and try again.",
+      );
       setState("error");
-      return;
     }
-
-    const next = sp.get("next") ?? "/dashboard";
-    router.replace(next);
-    router.refresh();
   };
 
   const handleSignUp = async () => {
@@ -155,34 +177,43 @@ function LoginPageInner() {
     }
 
     setState("submitting");
-    const supabase = createBrowserSupabase();
-    const { data, error: err } = await supabase.auth.signUp({
-      email: trimmedEmail,
-      password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
-      },
-    });
+    try {
+      const supabase = createBrowserSupabase();
+      const { data, error: err } = await supabase.auth.signUp({
+        email: trimmedEmail,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        },
+      });
 
-    if (err) {
-      setError(mapAuthError(err.message));
+      if (err) {
+        setError(mapAuthError(err.message));
+        setState("error");
+        return;
+      }
+
+      // If "Confirm email" is OFF in Supabase, signUp returns a session
+      // immediately and we go straight to the dashboard. Hard nav for the
+      // same reason as sign-in (see comment above).
+      if (data.session) {
+        const next = sp.get("next") ?? "/dashboard";
+        window.location.assign(next);
+        return;
+      }
+
+      // Confirm-email-on path: no session yet, user must click the link.
+      setEmailSentKind("confirm");
+      setState("email_sent");
+    } catch (err) {
+      console.error("[login] signUp threw", err);
+      setError(
+        err instanceof Error && err.message
+          ? `Couldn't reach the server: ${err.message}`
+          : "Couldn't reach the server. Check your connection and try again.",
+      );
       setState("error");
-      return;
     }
-
-    // If "Confirm email" is OFF in Supabase, signUp returns a session
-    // immediately and we go straight to the dashboard. The DB trigger
-    // (migration 006) creates the organizer row.
-    if (data.session) {
-      const next = sp.get("next") ?? "/dashboard";
-      router.replace(next);
-      router.refresh();
-      return;
-    }
-
-    // Confirm-email-on path: no session yet, user must click the link.
-    setEmailSentKind("confirm");
-    setState("email_sent");
   };
 
   const handleMagicLink = async () => {
@@ -194,22 +225,32 @@ function LoginPageInner() {
     }
 
     setState("submitting");
-    const supabase = createBrowserSupabase();
-    const { error: err } = await supabase.auth.signInWithOtp({
-      email: trimmedEmail,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
-      },
-    });
+    try {
+      const supabase = createBrowserSupabase();
+      const { error: err } = await supabase.auth.signInWithOtp({
+        email: trimmedEmail,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard`,
+        },
+      });
 
-    if (err) {
-      setError(mapAuthError(err.message));
+      if (err) {
+        setError(mapAuthError(err.message));
+        setState("error");
+        return;
+      }
+
+      setEmailSentKind("magic");
+      setState("email_sent");
+    } catch (err) {
+      console.error("[login] signInWithOtp threw", err);
+      setError(
+        err instanceof Error && err.message
+          ? `Couldn't reach the server: ${err.message}`
+          : "Couldn't reach the server. Check your connection and try again.",
+      );
       setState("error");
-      return;
     }
-
-    setEmailSentKind("magic");
-    setState("email_sent");
   };
 
   const switchMode = (next: Mode) => {
