@@ -200,3 +200,122 @@ export interface PaystackVerifyResponse {
     metadata: Record<string, unknown>;
   };
 }
+
+// ---- Awards V1 -------------------------------------------------------
+
+export type AwardPhase =
+  | "draft"
+  | "nominations_open"
+  | "moderation"
+  | "voting_open"
+  | "voting_closed"
+  | "revealed";
+
+export interface AwardCategory {
+  id: string;
+  event_id: string;
+  label: string;
+  vote_price_kobo: number;
+  phase: AwardPhase;
+  nominations_open_at: string | null;
+  nominations_close_at: string | null;
+  voting_open_at: string | null;
+  voting_close_at: string | null;
+  results_public_during_voting: boolean;
+  max_votes_per_voter: number | null;
+  sort_order: number;
+  revealed_winner_id: string | null;
+  revealed_at: string | null;
+  created_at: string;
+}
+
+export interface AwardNominee {
+  id: string;
+  category_id: string;
+  event_id: string;
+  display_name: string;
+  description: string | null;
+  photo_url: string | null;
+  is_excluded: boolean;
+  sort_order: number;
+  votes_count: number;
+  amount_kobo: number;
+  created_at: string;
+}
+
+export interface AwardNomination {
+  id: string;
+  category_id: string;
+  event_id: string;
+  nominee_name: string;
+  nominator_phone: string;
+  resolved_to: string | null;
+  status: "pending" | "promoted" | "rejected";
+  created_at: string;
+}
+
+export interface AwardVote {
+  id: string;
+  nominee_id: string;
+  category_id: string;
+  event_id: string;
+  voter_phone: string;
+  voter_name: string | null;
+  voter_email: string | null;
+  quantity: number;
+  paystack_ref: string;
+  amount_paid: number;
+  status: "pending" | "paid";
+  created_at: string;
+  paid_at: string | null;
+}
+
+/** API: POST /api/events/[id]/awards/categories */
+export interface CreateAwardCategoryRequest {
+  label: string;
+  vote_price_naira?: number;       // default ₦100
+  nominations_open_at?: string;    // ISO
+  nominations_close_at?: string;
+  voting_open_at?: string;
+  voting_close_at?: string;
+  results_public_during_voting?: boolean;
+  max_votes_per_voter?: number | null;
+  sort_order?: number;
+}
+
+/** API: POST /api/awards/nominations (public) */
+export interface SubmitNominationsRequest {
+  event_id: string;
+  nominator_phone: string;
+  // One entry per category the nominator wants to nominate in.
+  // Empty strings (skipped categories) are filtered server-side.
+  nominations: Array<{
+    category_id: string;
+    nominee_name: string;
+  }>;
+}
+
+/** API: POST /api/awards/nominations/[id]/promote (organizer) */
+export interface PromoteNominationRequest {
+  /** If set, merge this raw nomination into an existing nominee. Otherwise
+   *  create a new nominee using nominee_name as display_name. */
+  into_nominee_id?: string;
+  /** Override for new nominee creation */
+  display_name?: string;
+  description?: string;
+  photo_url?: string;
+}
+
+/** API: POST /api/awards/vote/init (public) */
+export interface InitAwardVoteRequest {
+  nominee_id: string;
+  voter_phone: string;
+  voter_name?: string;
+  voter_email?: string;
+  quantity: number;
+}
+
+export interface InitAwardVoteResponse {
+  authorizationUrl: string;
+  reference: string;
+}

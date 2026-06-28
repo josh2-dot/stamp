@@ -48,6 +48,12 @@ export async function POST(req: NextRequest) {
   // Route by event type
   switch (event.event) {
     case "charge.success":
+      // Dispatch by reference shape: VOTE-* are awards, everything else
+      // is a ticket purchase. Comp tickets don't go through charges at
+      // all — they're issued via /api/events/[id]/comp directly.
+      if (event.data.reference?.startsWith("VOTE-")) {
+        return handleAwardVoteSuccess(event);
+      }
       return handleChargeSuccess(event);
     case "transfer.success":
       return handleTransferStatus(event, "success");
@@ -316,4 +322,98 @@ async function handleTransferStatus(
   }
 
   return NextResponse.json({ ok: true });
+}
+
+// ============================================================
+// Award vote handling
+// ============================================================
+//
+// Vote payments behave like ticket payments structurally but:
+//   - Money flows 100% to the organizer (no per-vote STAMP cut). STAMP's
+//     module fee is collected at withdrawal time.
+//   - There's no QR code, no door scanner, no SMS to the voter. The
+//     voter just sees the success page with their vote confirmed.
+//   - The organizer gets a quiet notification ("12 votes for X just came
+//     in") so they can watch the leaderboard fill.
+
+async function handleAwardVoteSuccess(event: PaystackWebhookEvent) {
+  const reference = event.data.reference;
+  if (!reference) {
+    return NextResponse.json({ ok: false, reason: "no_reference" });
+  }
+
+  try {
+    const verification = await verifyTransaction(reference);
+    if (!verification.status || verification.data.status !== "success") {
+      console.warn("[paystack-webhook] vote verification failed", reference);
+      return NextResponse.json({ ok: false, reason: "verification_failed" });
+    }
+
+    const supabase = createAdminSupabase();
+
+    // Idempotency — return ok if already processed
+    const { data: vote } = await supabase
+      .from("award_votes")
+      .select(
+        `id, status, quantity, amount_paid, nominee_id, category_id, event_id, voter_phone, voter_name,
+         award_nominees!inner(display_name),
+         award_categories!inner(label),
+         events!inner(title, organizer_id, organizers!inner(phone))`,
+      )
+      .eq("paystack_ref", reference)
+      .maybeSingle();
+
+    if (!vote) {
+      console.warn("[paystack-webhook] vote not found for ref", reference);
+      return NextResponse.json({ ok: false, reason: "vote_not_found" });
+    }
+    if (vote.status === "paid") {
+      return NextResponse.json({ ok: true, already_processed: true });
+    }
+
+    // Flip the vote to paid
+    await supabase
+      .from("award_votes")
+      .update({
+        status: "paid",
+        paid_at: new Date().toISOString(),
+      })
+      .eq("id", vote.id);
+
+    // Update denormalized counters on the nominee
+    await supabase.rpc("recount_nominee_votes", { p_nominee_id: vote.nominee_id });
+
+    // Quiet organizer ping. We don't notify per-vote at scale (would spam
+    // hard during a busy voting window) so only ping at "milestone"
+    // quantities — 1, 5, 10, 25, 50, 100+. For V1 just always ping; if
+    // it gets noisy we'll batch in V1.1.
+    const nominee = Array.isArray(vote.award_nominees)
+      ? vote.award_nominees[0]
+      : vote.award_nominees;
+    const category = Array.isArray(vote.award_categories)
+      ? vote.award_categories[0]
+      : vote.award_categories;
+    const ev = Array.isArray(vote.events) ? vote.events[0] : vote.events;
+    const evObj = ev as
+      | { title: string; organizer_id: string; organizers: { phone: string } | { phone: string }[] }
+      | undefined;
+    const organizers = evObj?.organizers;
+    const organizer = Array.isArray(organizers) ? organizers[0] : organizers;
+
+    if (organizer?.phone) {
+      const message =
+        `STAMP: ${vote.quantity} vote(s) for "${(nominee as { display_name: string }).display_name}" ` +
+        `in "${(category as { label: string }).label}" — ₦${(Number(vote.amount_paid) / 100).toLocaleString()}.`;
+      try {
+        await notifyOrganizer(organizer.phone, message);
+      } catch (err) {
+        console.error("[paystack-webhook] organizer notify failed", err);
+      }
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[paystack-webhook] vote handling failed", err);
+    return NextResponse.json({ ok: false, reason: "exception" }, { status: 500 });
+  }
 }

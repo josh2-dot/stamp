@@ -64,7 +64,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. Balance check — atomic with the insert below.
+  // 4. Charge any unbilled awards-module fees before the balance check
+  //    so they're reflected in the available balance. This is the moment
+  //    STAMP collects its awards revenue — capped at vote revenue per event,
+  //    idempotent across calls.
+  const { error: chargeErr } = await admin.rpc("charge_awards_module_fees", {
+    p_organizer_id: organizer.id,
+  });
+  if (chargeErr) {
+    console.error("[withdraw] awards fee charge failed", chargeErr);
+    // Not fatal — the balance check below will simply not deduct
+    // any fees that haven't been materialized yet. Worth flagging though.
+  }
+
+  // 5. Balance check — atomic with the insert below.
   // We do an explicit RPC check, then insert. There's a tiny race window
   // between the check and the insert if two requests fire simultaneously;
   // since a single organizer doesn't fire concurrent withdrawals in practice,
