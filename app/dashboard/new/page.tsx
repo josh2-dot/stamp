@@ -10,12 +10,14 @@ import { Input } from "@/components/ui/Input";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PosterPicker } from "@/components/event/PosterPicker";
 import { formatNaira } from "@/lib/format";
+import { calculatePlatformFee, calculateBuyerTotal } from "@/lib/fee-rules";
 
 interface TierDraft {
   id: string;
   name: string;
+  /** Ticket price (what the organizer receives). STAMP's fee is added on
+   *  top silently to produce the buyer-facing total. */
   price: string;
-  service_fee: string;
   capacity: string;
 }
 
@@ -23,7 +25,6 @@ const newTier = (): TierDraft => ({
   id: crypto.randomUUID(),
   name: "",
   price: "",
-  service_fee: "200",
   capacity: "",
 });
 
@@ -65,7 +66,6 @@ export default function NewEventPage() {
     const parsedTiers = tiers.map((t) => ({
       name: t.name.trim(),
       price_naira: parseFloat(t.price) || 0,
-      service_fee_naira: parseFloat(t.service_fee) || 0,
       capacity: parseInt(t.capacity, 10) || 0,
     }));
 
@@ -219,25 +219,16 @@ export default function NewEventPage() {
                   onChange={(e) => updateTier(tier.id, { name: e.target.value })}
                 />
 
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                   <Input
-                    label="Face value"
+                    label="Ticket price"
                     type="number"
                     inputMode="numeric"
                     placeholder="3000"
                     value={tier.price}
                     onChange={(e) => updateTier(tier.id, { price: e.target.value })}
                     prefix="₦"
-                  />
-                  <Input
-                    label="Service fee"
-                    type="number"
-                    inputMode="numeric"
-                    placeholder="200"
-                    value={tier.service_fee}
-                    onChange={(e) => updateTier(tier.id, { service_fee: e.target.value })}
-                    prefix="₦"
-                    hint="STAMP's cut. Buyer pays this on top."
+                    hint="What buyers pay. No add-ons at checkout."
                   />
                   <Input
                     label="Capacity"
@@ -249,13 +240,11 @@ export default function NewEventPage() {
                   />
                 </div>
 
-                {tier.price && tier.service_fee && (
-                  <p className="text-xs text-stamp-muted-2 pt-1">
-                    Buyer pays {formatNaira(
-                      (parseFloat(tier.price) + parseFloat(tier.service_fee || "0")) * 100,
-                    )}
-                    {" · "}You receive {formatNaira(parseFloat(tier.price) * 100)} per ticket
-                  </p>
+                {tier.price && parseFloat(tier.price) > 0 && (
+                  // Net-to-organizer surfaces prominently so the platform fee
+                  // is never a surprise at payout time. Organizers see exactly
+                  // what they'll receive per ticket sold.
+                  <PayoutPreview priceNaira={parseFloat(tier.price)} />
                 )}
               </div>
             ))}
@@ -280,5 +269,48 @@ export default function NewEventPage() {
         </div>
       </div>
     </PageShell>
+  );
+}
+
+/**
+ * Tier payout breakdown. Mirrors the math STAMP runs at sale time so the
+ * organizer sees, before the event is even created, exactly what they net.
+ * Sub-₦1,500 tickets show a warning because the ₦200 base fee bites hard
+ * at low prices.
+ */
+function PayoutPreview({ priceNaira }: { priceNaira: number }) {
+  const priceKobo = Math.round(priceNaira * 100);
+  const feeKobo = calculatePlatformFee(priceKobo);
+  const buyerKobo = calculateBuyerTotal(priceKobo);
+  const effectiveRate = priceKobo > 0 ? (feeKobo / priceKobo) * 100 : 0;
+  const steep = effectiveRate > 15;
+
+  return (
+    <div className="pt-3 mt-1 border-t border-stamp-border space-y-1.5 text-xs">
+      {/* Organizer's take is the headline — what they entered, what they
+          receive, no math required. */}
+      <div className="flex justify-between">
+        <span className="text-stamp-white font-medium">You receive</span>
+        <span className="text-stamp-orange font-display tabular-nums">
+          {formatNaira(priceKobo)}
+        </span>
+      </div>
+      {/* Buyer total is informational, sub-styled. STAMP's fee is named only
+          here, where the organizer is the audience — buyers never see this. */}
+      <div className="flex justify-between pt-1.5 border-t border-stamp-border">
+        <span className="text-stamp-muted-2">Buyer sees</span>
+        <span className="text-stamp-muted-2 tabular-nums">{formatNaira(buyerKobo)}</span>
+      </div>
+      <p className="text-[11px] text-stamp-muted-2">
+        STAMP's ₦200 + 3% ({formatNaira(feeKobo)}) is added silently on top.
+      </p>
+      {steep && (
+        <p className="text-stamp-gold text-[11px] pt-1.5 border-t border-stamp-border">
+          Heads up — STAMP's fee adds {effectiveRate.toFixed(0)}% to your price,
+          so buyers see {formatNaira(buyerKobo)}, not {formatNaira(priceKobo)}.
+          Consider ₦1,500+ tickets for cleaner buyer-facing prices.
+        </p>
+      )}
+    </div>
   );
 }

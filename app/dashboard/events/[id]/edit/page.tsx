@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PosterPicker } from "@/components/event/PosterPicker";
 import { formatNaira } from "@/lib/format";
+import { calculatePlatformFee, calculateBuyerTotal } from "@/lib/fee-rules";
 import type { EditEventResponse } from "@/types";
 
 interface ExistingTier {
@@ -38,8 +39,8 @@ interface TierDraft {
   id?: string;           // present when editing an existing tier
   localKey: string;      // stable key for React list rendering
   name: string;
-  price: string;         // naira (form-level string)
-  service_fee: string;
+  /** Ticket price in naira (form-level string). STAMP fee is server-computed. */
+  price: string;
   capacity: string;
   sold: number;          // read-only — drives validation rules
 }
@@ -48,7 +49,6 @@ const newTier = (): TierDraft => ({
   localKey: crypto.randomUUID(),
   name: "",
   price: "",
-  service_fee: "200",
   capacity: "",
   sold: 0,
 });
@@ -123,7 +123,6 @@ export default function EditEventPage() {
             localKey: t.id,
             name: t.name,
             price: String(t.price / 100),
-            service_fee: String(t.service_fee / 100),
             capacity: String(t.capacity),
             sold: t.sold,
           })),
@@ -220,7 +219,6 @@ export default function EditEventPage() {
       if (!orig) return true;
       if (orig.name !== t.name.trim()) return true;
       if (orig.price !== Math.round(parseFloat(t.price || "0") * 100)) return true;
-      if (orig.service_fee !== Math.round(parseFloat(t.service_fee || "0") * 100)) return true;
       if (orig.capacity !== parseInt(t.capacity || "0", 10)) return true;
     }
     return false;
@@ -239,7 +237,6 @@ export default function EditEventPage() {
       id: t.id,
       name: t.name.trim(),
       price_naira: parseFloat(t.price) || 0,
-      service_fee_naira: parseFloat(t.service_fee) || 0,
       capacity: parseInt(t.capacity, 10) || 0,
       sort_order: i,
     }));
@@ -283,7 +280,6 @@ export default function EditEventPage() {
           localKey: t.id,
           name: t.name,
           price: String(t.price / 100),
-          service_fee: String(t.service_fee / 100),
           capacity: String(t.capacity),
           sold: t.sold,
         })),
@@ -482,22 +478,15 @@ export default function EditEventPage() {
                       onChange={(e) => updateTier(tier.localKey, { name: e.target.value })}
                     />
 
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-2 gap-3">
                       <Input
-                        label="Face value"
+                        label="Ticket price"
                         type="number"
                         inputMode="numeric"
                         value={tier.price}
                         onChange={(e) => updateTier(tier.localKey, { price: e.target.value })}
                         prefix="₦"
-                      />
-                      <Input
-                        label="Service fee"
-                        type="number"
-                        inputMode="numeric"
-                        value={tier.service_fee}
-                        onChange={(e) => updateTier(tier.localKey, { service_fee: e.target.value })}
-                        prefix="₦"
+                        hint="What buyers pay."
                       />
                       <Input
                         label="Capacity"
@@ -509,13 +498,8 @@ export default function EditEventPage() {
                       />
                     </div>
 
-                    {tier.price && tier.service_fee && (
-                      <p className="text-xs text-stamp-muted-2 pt-1">
-                        Buyer pays {formatNaira(
-                          (parseFloat(tier.price) + parseFloat(tier.service_fee || "0")) * 100,
-                        )}
-                        {" · "}You receive {formatNaira(parseFloat(tier.price) * 100)} per ticket
-                      </p>
+                    {tier.price && parseFloat(tier.price) > 0 && (
+                      <PayoutPreview priceNaira={parseFloat(tier.price)} />
                     )}
                   </div>
                 );
@@ -598,5 +582,45 @@ export default function EditEventPage() {
           </div>
         </div>
     </PageShell>
+  );
+}
+
+/**
+ * Same payout-preview component as in /dashboard/new — kept duplicated rather
+ * than extracted because both pages have slightly different surrounding
+ * context (new event = first impression, edit = post-creation tweak) and a
+ * shared component would over-couple them. Both rely on lib/fee-rules.ts for
+ * the actual math, so the displayed numbers can't drift.
+ */
+function PayoutPreview({ priceNaira }: { priceNaira: number }) {
+  const priceKobo = Math.round(priceNaira * 100);
+  const feeKobo = calculatePlatformFee(priceKobo);
+  const buyerKobo = calculateBuyerTotal(priceKobo);
+  const effectiveRate = priceKobo > 0 ? (feeKobo / priceKobo) * 100 : 0;
+  const steep = effectiveRate > 15;
+
+  return (
+    <div className="pt-3 mt-1 border-t border-stamp-border space-y-1.5 text-xs">
+      <div className="flex justify-between">
+        <span className="text-stamp-white font-medium">You receive</span>
+        <span className="text-stamp-orange font-display tabular-nums">
+          {formatNaira(priceKobo)}
+        </span>
+      </div>
+      <div className="flex justify-between pt-1.5 border-t border-stamp-border">
+        <span className="text-stamp-muted-2">Buyer sees</span>
+        <span className="text-stamp-muted-2 tabular-nums">{formatNaira(buyerKobo)}</span>
+      </div>
+      <p className="text-[11px] text-stamp-muted-2">
+        STAMP's ₦200 + 3% ({formatNaira(feeKobo)}) is added silently on top.
+      </p>
+      {steep && (
+        <p className="text-stamp-gold text-[11px] pt-1.5 border-t border-stamp-border">
+          Heads up — STAMP's fee adds {effectiveRate.toFixed(0)}% to your price,
+          so buyers see {formatNaira(buyerKobo)}, not {formatNaira(priceKobo)}.
+          Consider ₦1,500+ tickets for cleaner buyer-facing prices.
+        </p>
+      )}
+    </div>
   );
 }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { calculatePlatformFee } from "@/lib/fee-rules";
 import type { EditEventRequest, EditEventResponse } from "@/types";
 
 export const runtime = "nodejs";
@@ -154,12 +155,8 @@ export async function PATCH(
           { status: 400 },
         );
       }
-      if (!Number.isFinite(tier.service_fee_naira) || tier.service_fee_naira < 0) {
-        return NextResponse.json(
-          { error: `Invalid service fee for tier "${name}"` },
-          { status: 400 },
-        );
-      }
+      // service_fee is computed server-side from the central fee rules —
+      // organizers cannot set it (see lib/fee-rules.ts).
       const capacity = Math.floor(tier.capacity);
       if (!Number.isFinite(capacity) || capacity <= 0) {
         return NextResponse.json(
@@ -208,11 +205,13 @@ export async function PATCH(
     for (const tier of body.tiers) {
       const sortOrder = tier.sort_order ?? sortIdx;
       sortIdx++;
+      const priceKobo = Math.round(tier.price_naira * 100);
       const row = {
         event_id: event.id,
         name: tier.name.trim(),
-        price: Math.round(tier.price_naira * 100),
-        service_fee: Math.round(tier.service_fee_naira * 100),
+        price: priceKobo,
+        // STAMP fee, recomputed every save in case the rules change
+        service_fee: calculatePlatformFee(priceKobo),
         capacity: Math.floor(tier.capacity),
         sort_order: sortOrder,
       };

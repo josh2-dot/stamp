@@ -51,6 +51,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Sold out" }, { status: 409 });
     }
 
+    // Buyer pays ticket price + STAMP fee. The fee is silently added —
+    // never shown as a separate line at checkout (see TicketTierSelector
+    // and CheckoutPanel). The organizer's take is the bare `tier.price`,
+    // which is what they entered and what they see at payout time.
     const amountKobo = tier.price + tier.service_fee;
     const ref = makeReference();
     const qrCode = crypto.randomUUID();

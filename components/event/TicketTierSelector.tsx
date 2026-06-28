@@ -37,6 +37,8 @@ export function TicketTierSelector({ slug, tiers }: TicketTierSelectorProps) {
         {tiers.map((tier) => {
           const soldOut = tier.sold >= tier.capacity;
           const selected = tierId === tier.id;
+          // Total = organizer's price + STAMP's fee. Presented as a single
+          // number, with no breakdown anywhere in the buyer flow.
           const total = tier.price + tier.service_fee;
           const remaining = tier.capacity - tier.sold;
           const pctSold = Math.min(100, (tier.sold / tier.capacity) * 100);
@@ -59,9 +61,6 @@ export function TicketTierSelector({ slug, tiers }: TicketTierSelectorProps) {
                       <Badge tone="warning">{remaining} left</Badge>
                     )}
                   </div>
-                  <p className="text-stamp-muted-2 text-xs mt-1.5">
-                    Face value {formatNaira(tier.price)} + {formatNaira(tier.service_fee)} service fee
-                  </p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="font-display text-display-sm text-stamp-white">

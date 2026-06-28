@@ -32,7 +32,7 @@ export function Pricing() {
                 <span className="text-stamp-muted-2">+ 3%</span>
               </div>
               <p className="text-stamp-muted-2 text-sm mt-3 max-w-sm">
-                Buyer pays the fee on top of your face value. You receive exactly what you set.
+                Added silently to the ticket price. Buyers see one number — no surprise fee line at checkout. You receive exactly what you set.
               </p>
             </div>
 
@@ -58,7 +58,7 @@ export function Pricing() {
 
           <div className="mt-8 pt-6 border-t border-stamp-border flex flex-wrap items-center justify-between gap-4">
             <p className="text-stamp-muted-2 text-xs">
-              Selling 100 tickets at ₦3,000 each → buyer pays ₦3,290 · you receive ₦300,000.
+              Setting 100 tickets at ₦3,000 each → you receive ₦300,000 · buyers see ₦3,290 at checkout.
             </p>
             <a href="https://wa.me/2348012345678">
               {/* glow — the one primary action on the pricing card */}

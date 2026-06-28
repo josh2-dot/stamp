@@ -20,6 +20,8 @@ export function CheckoutPanel({ event, tier }: CheckoutPanelProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Buyer's total = organizer price + STAMP fee. Presented as a single
+  // number; no breakdown shown anywhere in the buyer flow.
   const total = tier.price + tier.service_fee;
 
   const handlePay = async () => {
@@ -155,14 +157,6 @@ export function CheckoutPanel({ event, tier }: CheckoutPanelProps) {
             <div className="flex justify-between">
               <span className="text-stamp-muted-2">Tier</span>
               <span>{tier.name}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-stamp-muted-2">Face value</span>
-              <span>{formatNaira(tier.price)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-stamp-muted-2">Service fee</span>
-              <span>{formatNaira(tier.service_fee)}</span>
             </div>
           </div>
 

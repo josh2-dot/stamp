@@ -115,7 +115,6 @@ export interface EditEventRequest {
     id?: string;            // present = update existing; absent = insert new
     name: string;
     price_naira: number;
-    service_fee_naira: number;
     capacity: number;
     sort_order?: number;
   }>;

@@ -25,8 +25,10 @@ export function TierBreakdown({ tiers }: TierBreakdownProps) {
               <div className="flex items-baseline justify-between gap-3 mb-1.5">
                 <div className="flex items-baseline gap-2 min-w-0">
                   <span className="font-medium truncate text-stamp-white">{t.name}</span>
+                  {/* Organizer dashboard — show what THEY receive per ticket,
+                      not what the buyer pays. Their P&L, their view. */}
                   <span className="text-xs text-stamp-muted-2 shrink-0">
-                    {formatNaira(t.price + t.service_fee)}
+                    {formatNaira(t.price)}
                   </span>
                 </div>
                 <span className="text-sm text-stamp-muted-2 shrink-0">

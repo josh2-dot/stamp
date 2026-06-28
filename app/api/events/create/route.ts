@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { slugify, withSuffix } from "@/lib/slug";
+import { calculatePlatformFee } from "@/lib/fee-rules";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,8 +15,9 @@ interface CreateEventBody {
   event_date: string;
   tiers: Array<{
     name: string;
-    price_naira: number;        // user inputs naira, we store kobo
-    service_fee_naira: number;
+    /** Ticket price (what the buyer pays). User inputs naira, we store kobo.
+     *  STAMP's fee is computed server-side; organizers cannot set it. */
+    price_naira: number;
     capacity: number;
   }>;
 }
@@ -103,15 +105,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't create event" }, { status: 500 });
   }
 
-  // Insert tiers
-  const tierRows = body.tiers.map((t, idx) => ({
-    event_id: event.id,
-    name: t.name.trim(),
-    price: Math.round(t.price_naira * 100),
-    service_fee: Math.round((t.service_fee_naira ?? 0) * 100),
-    capacity: Math.floor(t.capacity),
-    sort_order: idx,
-  }));
+  // Insert tiers — service_fee is computed centrally, not supplied by client.
+  const tierRows = body.tiers.map((t, idx) => {
+    const priceKobo = Math.round(t.price_naira * 100);
+    return {
+      event_id: event.id,
+      name: t.name.trim(),
+      price: priceKobo,
+      service_fee: calculatePlatformFee(priceKobo),
+      capacity: Math.floor(t.capacity),
+      sort_order: idx,
+    };
+  });
 
   const { error: tierErr } = await admin.from("ticket_tiers").insert(tierRows);
 
