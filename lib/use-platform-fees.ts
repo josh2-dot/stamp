@@ -5,7 +5,7 @@ import {
   FEE_BASE_KOBO_FALLBACK,
   FEE_RATE_BPS_FALLBACK,
   calculatePlatformFeeFromRates,
-} from "@/lib/fee-rules";
+} from "@/lib/fee-math";
 
 interface PlatformFees {
   base: number;
