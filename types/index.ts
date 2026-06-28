@@ -165,6 +165,10 @@ export interface DashboardSnapshot {
   feesKobo: number;
   netToOrganizerKobo: number;
   checkedIn: number;
+  /** Tickets issued for free (lecturers, sponsors, media, etc.). Counted
+   *  toward totalSold and checkedIn but excluded from revenue + hourly. */
+  compCount: number;
+  checkedInComps: number;
   recentTickets: Array<
     Pick<Ticket, "id" | "buyer_name" | "buyer_phone" | "amount_paid" | "created_at" | "used"> & {
       tier_name: string;

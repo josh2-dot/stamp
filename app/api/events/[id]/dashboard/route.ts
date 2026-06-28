@@ -43,14 +43,21 @@ export async function GET(
 
   const { data: tickets } = await admin
     .from("tickets")
-    .select(`id, buyer_name, buyer_phone, amount_paid, created_at, used, status, tier_id,
+    .select(`id, buyer_name, buyer_phone, amount_paid, created_at, used, status, tier_id, is_complimentary,
        ticket_tiers!inner(name)`)
     .eq("event_id", params.id)
     .eq("status", "paid")
     .order("created_at", { ascending: false });
 
   const tierList = (tiers ?? []) as TicketTier[];
-  const paidTickets = tickets ?? [];
+  const allPaidTickets = tickets ?? [];
+
+  // Split comps from real sales — comps don't count in revenue or hourly
+  // chart, but they ARE in totalSold/checkedIn (the door still admits them).
+  const paidTickets = allPaidTickets.filter((t) => !t.is_complimentary);
+  const compTickets = allPaidTickets.filter((t) => t.is_complimentary);
+  const compCount = compTickets.length;
+  const checkedInComps = compTickets.filter((t) => t.used).length;
 
   const totalCapacity = tierList.reduce((s, t) => s + t.capacity, 0);
   const totalSold = tierList.reduce((s, t) => s + t.sold, 0);
@@ -62,7 +69,7 @@ export async function GET(
     return sum + (tier ? t.amount_paid - tier.price : 0);
   }, 0);
   const netToOrganizerKobo = grossKobo - feesKobo;
-  const checkedIn = paidTickets.filter((t) => t.used).length;
+  const checkedIn = allPaidTickets.filter((t) => t.used).length;
 
   // Hourly bucket over the last 24h
   const now = Date.now();
@@ -110,6 +117,8 @@ export async function GET(
     feesKobo,
     netToOrganizerKobo,
     checkedIn,
+    compCount,
+    checkedInComps,
     recentTickets: recent,
     hourly,
   };

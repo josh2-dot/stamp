@@ -19,6 +19,8 @@ interface TicketLookupResult {
   used: boolean;
   used_at: string | null;
   qr_image_url: string | null;
+  is_complimentary: boolean;
+  comp_note: string | null;
   event_title: string;
   event_venue: string;
   event_date: string;
@@ -117,9 +119,16 @@ export function TicketLookup() {
               <Badge tone={t.status === "paid" ? "success" : "warning"}>
                 {t.status}
               </Badge>
+              {t.is_complimentary && <Badge tone="warning">Comp</Badge>}
               {t.used && <Badge tone="default">Scanned</Badge>}
             </div>
           </div>
+
+          {t.is_complimentary && t.comp_note && (
+            <p className="text-xs text-stamp-gold italic">
+              Comp reason: {t.comp_note}
+            </p>
+          )}
 
           <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs pt-3 border-t border-stamp-border">
             <div>

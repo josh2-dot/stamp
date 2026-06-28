@@ -30,6 +30,7 @@ export async function GET(req: NextRequest) {
   const select = `
     id, status, buyer_name, buyer_phone, qr_code, paystack_ref,
     amount_paid, created_at, used, used_at, qr_image_url,
+    is_complimentary, comp_note,
     ticket_tiers!inner(name),
     events!inner(title, venue, event_date)
   `;
@@ -84,6 +85,8 @@ export async function GET(req: NextRequest) {
         used: boolean;
         used_at: string | null;
         qr_image_url: string | null;
+        is_complimentary: boolean;
+        comp_note: string | null;
         ticket_tiers: { name: string } | Array<{ name: string }>;
         events:
           | { title: string; venue: string; event_date: string }
@@ -105,6 +108,8 @@ export async function GET(req: NextRequest) {
         used: row.used,
         used_at: row.used_at,
         qr_image_url: row.qr_image_url,
+        is_complimentary: row.is_complimentary,
+        comp_note: row.comp_note,
         tier_name: tier?.name ?? "—",
         event_title: event?.title ?? "—",
         event_venue: event?.venue ?? "—",

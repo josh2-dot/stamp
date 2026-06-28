@@ -8,6 +8,7 @@ import { StatsRow } from "@/components/dashboard/StatsRow";
 import { TierBreakdown } from "@/components/dashboard/TierBreakdown";
 import { HourlyChart } from "@/components/dashboard/HourlyChart";
 import { LiveFeed } from "@/components/dashboard/LiveFeed";
+import { CompTicketCard } from "@/components/dashboard/CompTicketCard";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -190,6 +191,12 @@ export default function EventDashboardPage() {
                 />
               </div>
             </Card>
+
+            <CompTicketCard
+              eventId={ev.id}
+              tiers={snapshot.tiers}
+              onIssued={fetchSnapshot}
+            />
           </div>
 
           <LiveFeed tickets={snapshot.recentTickets} />

@@ -19,7 +19,10 @@ export function StatsRow({ snapshot }: StatsRowProps) {
     {
       label: "Tickets sold",
       value: snapshot.totalSold.toLocaleString(),
-      sub: `${pctFull}% of capacity`,
+      sub:
+        snapshot.compCount > 0
+          ? `${pctFull}% of capacity · ${snapshot.compCount} comp${snapshot.compCount === 1 ? "" : "s"}`
+          : `${pctFull}% of capacity`,
       primary: true,
     },
     {
