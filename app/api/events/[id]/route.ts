@@ -211,7 +211,7 @@ export async function PATCH(
         name: tier.name.trim(),
         price: priceKobo,
         // STAMP fee, recomputed every save in case the rules change
-        service_fee: calculatePlatformFee(priceKobo),
+        service_fee: await calculatePlatformFee(priceKobo),
         capacity: Math.floor(tier.capacity),
         sort_order: sortOrder,
       };

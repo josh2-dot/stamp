@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/Badge";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PosterPicker } from "@/components/event/PosterPicker";
 import { formatNaira } from "@/lib/format";
-import { calculatePlatformFee, calculateBuyerTotal } from "@/lib/fee-rules";
+import { usePlatformFees } from "@/lib/use-platform-fees";
 import type { EditEventResponse } from "@/types";
 
 interface ExistingTier {
@@ -593,11 +593,15 @@ export default function EditEventPage() {
  * the actual math, so the displayed numbers can't drift.
  */
 function PayoutPreview({ priceNaira }: { priceNaira: number }) {
+  const { fees, feeFor, buyerTotalFor } = usePlatformFees();
   const priceKobo = Math.round(priceNaira * 100);
-  const feeKobo = calculatePlatformFee(priceKobo);
-  const buyerKobo = calculateBuyerTotal(priceKobo);
+  const feeKobo = feeFor(priceKobo);
+  const buyerKobo = buyerTotalFor(priceKobo);
   const effectiveRate = priceKobo > 0 ? (feeKobo / priceKobo) * 100 : 0;
   const steep = effectiveRate > 15;
+  const baseNaira = fees.base / 100;
+  const ratePct = fees.rate / 100;
+  const feeFormula = `₦${baseNaira.toLocaleString()} + ${ratePct}%`;
 
   return (
     <div className="pt-3 mt-1 border-t border-stamp-border space-y-1.5 text-xs">
@@ -612,7 +616,7 @@ function PayoutPreview({ priceNaira }: { priceNaira: number }) {
         <span className="text-stamp-muted-2 tabular-nums">{formatNaira(buyerKobo)}</span>
       </div>
       <p className="text-[11px] text-stamp-muted-2">
-        STAMP's ₦200 + 3% ({formatNaira(feeKobo)}) is added silently on top.
+        STAMP's {feeFormula} ({formatNaira(feeKobo)}) is added silently on top.
       </p>
       {steep && (
         <p className="text-stamp-gold text-[11px] pt-1.5 border-t border-stamp-border">

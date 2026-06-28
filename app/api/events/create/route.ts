@@ -106,17 +106,20 @@ export async function POST(req: NextRequest) {
   }
 
   // Insert tiers — service_fee is computed centrally, not supplied by client.
-  const tierRows = body.tiers.map((t, idx) => {
-    const priceKobo = Math.round(t.price_naira * 100);
-    return {
-      event_id: event.id,
-      name: t.name.trim(),
-      price: priceKobo,
-      service_fee: calculatePlatformFee(priceKobo),
-      capacity: Math.floor(t.capacity),
-      sort_order: idx,
-    };
-  });
+  // calculatePlatformFee reads the DB-stored fee config (with cache).
+  const tierRows = await Promise.all(
+    body.tiers.map(async (t, idx) => {
+      const priceKobo = Math.round(t.price_naira * 100);
+      return {
+        event_id: event.id,
+        name: t.name.trim(),
+        price: priceKobo,
+        service_fee: await calculatePlatformFee(priceKobo),
+        capacity: Math.floor(t.capacity),
+        sort_order: idx,
+      };
+    }),
+  );
 
   const { error: tierErr } = await admin.from("ticket_tiers").insert(tierRows);
 

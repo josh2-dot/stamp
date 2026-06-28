@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/Input";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { PosterPicker } from "@/components/event/PosterPicker";
 import { formatNaira } from "@/lib/format";
-import { calculatePlatformFee, calculateBuyerTotal } from "@/lib/fee-rules";
+import { usePlatformFees } from "@/lib/use-platform-fees";
 
 interface TierDraft {
   id: string;
@@ -279,30 +279,33 @@ export default function NewEventPage() {
  * at low prices.
  */
 function PayoutPreview({ priceNaira }: { priceNaira: number }) {
+  const { fees, feeFor, buyerTotalFor } = usePlatformFees();
   const priceKobo = Math.round(priceNaira * 100);
-  const feeKobo = calculatePlatformFee(priceKobo);
-  const buyerKobo = calculateBuyerTotal(priceKobo);
+  const feeKobo = feeFor(priceKobo);
+  const buyerKobo = buyerTotalFor(priceKobo);
   const effectiveRate = priceKobo > 0 ? (feeKobo / priceKobo) * 100 : 0;
   const steep = effectiveRate > 15;
 
+  // Build the "₦200 + 3%" string from live config so the wording stays
+  // honest if an admin changes the fee model.
+  const baseNaira = fees.base / 100;
+  const ratePct = fees.rate / 100;
+  const feeFormula = `₦${baseNaira.toLocaleString()} + ${ratePct}%`;
+
   return (
     <div className="pt-3 mt-1 border-t border-stamp-border space-y-1.5 text-xs">
-      {/* Organizer's take is the headline — what they entered, what they
-          receive, no math required. */}
       <div className="flex justify-between">
         <span className="text-stamp-white font-medium">You receive</span>
         <span className="text-stamp-orange font-display tabular-nums">
           {formatNaira(priceKobo)}
         </span>
       </div>
-      {/* Buyer total is informational, sub-styled. STAMP's fee is named only
-          here, where the organizer is the audience — buyers never see this. */}
       <div className="flex justify-between pt-1.5 border-t border-stamp-border">
         <span className="text-stamp-muted-2">Buyer sees</span>
         <span className="text-stamp-muted-2 tabular-nums">{formatNaira(buyerKobo)}</span>
       </div>
       <p className="text-[11px] text-stamp-muted-2">
-        STAMP's ₦200 + 3% ({formatNaira(feeKobo)}) is added silently on top.
+        STAMP's {feeFormula} ({formatNaira(feeKobo)}) is added silently on top.
       </p>
       {steep && (
         <p className="text-stamp-gold text-[11px] pt-1.5 border-t border-stamp-border">

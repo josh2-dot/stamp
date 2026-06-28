@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
+import { isAdminEmail } from "@/lib/admin";
 import { PageShell } from "@/components/ui/PageShell";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -79,6 +80,13 @@ export default async function DashboardPage() {
           </h1>
         </div>
         <div className="flex items-center gap-3">
+          {isAdminEmail(organizer.email) && (
+            <Link href="/admin">
+              <Button variant="ghost" size="sm">
+                Admin
+              </Button>
+            </Link>
+          )}
           <Link href="/dashboard/payouts">
             <Button variant="ghost" size="sm">Payouts</Button>
           </Link>
