@@ -18,6 +18,7 @@ export default function SuccessPage() {
 
   const [status, setStatus] = useState<Status>("polling");
   const [ticket, setTicket] = useState<{
+    qr_code: string;
     qr_image_url: string | null;
     buyer_name: string | null;
     buyer_phone: string;
@@ -98,9 +99,9 @@ export default function SuccessPage() {
               Stamped &amp; sent.
             </h1>
             <p className="text-stamp-muted-2 max-w-md mx-auto">
-              Your ticket is in WhatsApp on{" "}
+              We sent the link to{" "}
               <span className="text-stamp-white">{ticket.buyer_phone}</span>.
-              Show this QR at the door — or use the one in WhatsApp.
+              Show this QR at the door — or open the link below.
             </p>
           </div>
 
@@ -129,6 +130,20 @@ export default function SuccessPage() {
             </div>
           </Card>
 
+          {/* Bookmarkable URL — the source-of-truth link. Even if the SMS gets
+              deleted and the email goes to spam, this URL is the permanent
+              record. Buyer can save, bookmark, or share with a friend who's
+              going to the gate on their behalf. */}
+          <div className="p-4 rounded-md bg-stamp-surface2 border border-stamp-border text-center">
+            <p className="text-xs text-stamp-muted-2 mb-2">
+              Bookmark this link — your ticket lives here
+            </p>
+            <code className="block text-sm text-stamp-orange break-all">
+              {typeof window !== "undefined" ? window.location.origin : ""}/t/
+              {ticket.qr_code}
+            </code>
+          </div>
+
           <p className="text-center text-xs text-stamp-muted-2">
             <Link href={`/${params.slug}`} className="hover:text-stamp-white">
               ← Back to event page
@@ -144,7 +159,7 @@ export default function SuccessPage() {
           </h1>
           <p className="text-stamp-muted-2 max-w-md mx-auto">
             Your payment went through, but we haven't finished issuing the ticket yet.
-            Check your WhatsApp in a minute — or contact us if it doesn't arrive.
+            Check your SMS in a minute — or contact us if it doesn't arrive.
           </p>
           <a
             href="https://wa.me/2348012345678"

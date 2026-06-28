@@ -21,7 +21,7 @@ export async function GET(
   const { data: ticket, error } = await supabase
     .from("tickets")
     .select(
-      `status, qr_image_url, buyer_name, buyer_phone,
+      `status, qr_code, qr_image_url, buyer_name, buyer_phone,
        ticket_tiers!inner(name),
        events!inner(title, venue, event_date)`,
     )
@@ -39,6 +39,7 @@ export async function GET(
 
   return NextResponse.json({
     status: ticket.status,
+    qr_code: ticket.qr_code,
     qr_image_url: ticket.qr_image_url,
     buyer_name: ticket.buyer_name,
     buyer_phone: ticket.buyer_phone,

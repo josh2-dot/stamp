@@ -105,7 +105,7 @@ export function CheckoutPanel({ event, tier }: CheckoutPanelProps) {
           onChange={(e) => setEmail(e.target.value)}
           type="email"
           autoComplete="email"
-          hint="We don't email tickets — Paystack uses this for the receipt only."
+          hint="We'll send your ticket here too. Paystack also uses it for the payment receipt."
         />
 
         {error && (

@@ -5,10 +5,11 @@ import { generateQR } from "@/lib/qr";
 import { uploadQRToSupabase } from "@/lib/storage";
 import {
   deliverTicket,
+  notifyOrganizer,
   organizerNotification,
-  sendWhatsApp,
-  ticketMessage,
 } from "@/lib/termii";
+import { sendEmail, buildTicketEmailHtml } from "@/lib/email";
+import { ticketWebUrl } from "@/lib/ticket-url";
 import { koboToNaira } from "@/lib/format";
 
 export const runtime = "nodejs";
@@ -83,7 +84,7 @@ async function handleChargeSuccess(event: PaystackWebhookEvent) {
     const { data: ticket, error: ticketErr } = await supabase
       .from("tickets")
       .select(
-        `id, status, buyer_phone, buyer_name, event_id, tier_id, amount_paid,
+        `id, status, buyer_phone, buyer_name, buyer_email, event_id, tier_id, amount_paid,
          qr_code, ticket_tiers!inner(id, name, price),
          events!inner(id, title, venue, event_date,
            organizers!inner(id, phone, name))`,
@@ -145,22 +146,58 @@ async function handleChargeSuccess(event: PaystackWebhookEvent) {
       raw_payload: verification.data as unknown as object,
     });
 
-    // 8. Deliver ticket — WhatsApp first, SMS fallback
-    const buyerMessage = ticketMessage({
+    // 8. Deliver ticket — multi-channel.
+    //    - SMS (always) with link to the canonical web ticket page.
+    //    - Email (if buyer provided one) with embedded QR + link.
+    //    - WhatsApp (only when WHATSAPP_ENABLED) — falls back to SMS,
+    //      which we've already sent, so failure is a no-op.
+    const dateStr = new Date(ev.event_date).toLocaleString("en-NG", {
+      dateStyle: "full",
+      timeStyle: "short",
+      timeZone: "Africa/Lagos",
+    });
+    const ticketUrl = ticketWebUrl(ticket.qr_code);
+
+    const delivery = await deliverTicket({
+      phone: ticket.buyer_phone,
+      qrCode: ticket.qr_code,
       eventTitle: ev.title,
       venue: ev.venue,
-      date: new Date(ev.event_date).toLocaleString("en-NG", {
-        dateStyle: "full",
-        timeStyle: "short",
-        timeZone: "Africa/Lagos",
-      }),
+      date: dateStr,
       tierName: tier.name,
-      qrUrl,
+      qrImageUrl: qrUrl,
     });
-
-    const delivery = await deliverTicket(ticket.buyer_phone, buyerMessage, qrUrl);
     if (!delivery.ok) {
-      console.error("[paystack-webhook] both whatsapp and sms failed", ticket.id);
+      console.error(
+        "[paystack-webhook] sms delivery failed",
+        ticket.id,
+        delivery,
+      );
+      // Not fatal — buyer can still access ticket via the success page
+      // URL or directly via the web ticket page if they have the link.
+    }
+
+    if (ticket.buyer_email) {
+      const emailResult = await sendEmail({
+        to: ticket.buyer_email,
+        subject: `Your STAMP ticket — ${ev.title}`,
+        html: buildTicketEmailHtml({
+          eventTitle: ev.title,
+          venue: ev.venue,
+          date: dateStr,
+          tierName: tier.name,
+          buyerName: ticket.buyer_name,
+          qrImageUrl: qrUrl,
+          ticketUrl,
+        }),
+      });
+      if (!emailResult.ok && !emailResult.skipped) {
+        console.error(
+          "[paystack-webhook] email delivery failed",
+          ticket.id,
+          emailResult.error,
+        );
+      }
     }
 
     // 9. Notify organizer (best-effort)
@@ -172,7 +209,7 @@ async function handleChargeSuccess(event: PaystackWebhookEvent) {
         .eq("event_id", ev.id)
         .eq("status", "paid");
 
-      await sendWhatsApp(
+      await notifyOrganizer(
         organizer.phone,
         organizerNotification({
           eventTitle: ev.title,
@@ -272,7 +309,7 @@ async function handleTransferStatus(
           ? `⚠️ Payout failed\n\nYour ₦${naira.toLocaleString()} withdrawal could not be completed.${failureReason ? `\n\nReason: ${failureReason}` : ""}\n\nThe amount is back in your STAMP balance — try again from the dashboard.`
           : `↩️ Payout reversed\n\nYour ₦${naira.toLocaleString()} payout was reversed by the bank.${failureReason ? `\n\nReason: ${failureReason}` : ""}\n\nThe amount has been restored to your STAMP balance.`;
 
-      await sendWhatsApp(org.phone, message);
+      await notifyOrganizer(org.phone, message);
     } catch (err) {
       console.error("[paystack-webhook] transfer notify failed", err);
     }

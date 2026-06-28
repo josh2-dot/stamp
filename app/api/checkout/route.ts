@@ -59,7 +59,9 @@ export async function POST(req: NextRequest) {
     const ref = makeReference();
     const qrCode = crypto.randomUUID();
 
-    // 2. Pending ticket row — webhook will flip status to 'paid'
+    // 2. Pending ticket row — webhook will flip status to 'paid'.
+    // buyer_email holds the REAL email if provided; null otherwise.
+    // The synthesized phone-based email below goes to Paystack only.
     const { data: ticket, error: ticketErr } = await supabase
       .from("tickets")
       .insert({
@@ -67,6 +69,7 @@ export async function POST(req: NextRequest) {
         tier_id: tier.id,
         buyer_name: body.buyerName ?? null,
         buyer_phone: body.buyerPhone,
+        buyer_email: body.email?.trim() || null,
         qr_code: qrCode,
         paystack_ref: ref,
         amount_paid: amountKobo,
