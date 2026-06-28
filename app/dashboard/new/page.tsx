@@ -286,11 +286,14 @@ function PayoutPreview({ priceNaira }: { priceNaira: number }) {
   const effectiveRate = priceKobo > 0 ? (feeKobo / priceKobo) * 100 : 0;
   const steep = effectiveRate > 15;
 
-  // Build the "₦200 + 3%" string from live config so the wording stays
-  // honest if an admin changes the fee model.
   const baseNaira = fees.base / 100;
   const ratePct = fees.rate / 100;
   const feeFormula = `₦${baseNaira.toLocaleString()} + ${ratePct}%`;
+  // Custom-rate organizers get a small accent so they know their numbers
+  // aren't the standard ones.
+  const feeLabel = fees.overridden
+    ? `Your custom rate (${feeFormula})`
+    : `STAMP's ${feeFormula}`;
 
   return (
     <div className="pt-3 mt-1 border-t border-stamp-border space-y-1.5 text-xs">
@@ -305,7 +308,7 @@ function PayoutPreview({ priceNaira }: { priceNaira: number }) {
         <span className="text-stamp-muted-2 tabular-nums">{formatNaira(buyerKobo)}</span>
       </div>
       <p className="text-[11px] text-stamp-muted-2">
-        STAMP's {feeFormula} ({formatNaira(feeKobo)}) is added silently on top.
+        {feeLabel} ({formatNaira(feeKobo)}) is added silently on top.
       </p>
       {steep && (
         <p className="text-stamp-gold text-[11px] pt-1.5 border-t border-stamp-border">

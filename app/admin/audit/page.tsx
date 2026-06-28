@@ -18,8 +18,19 @@ interface AuditEntry {
 }
 
 const actionLabel: Record<string, string> = {
-  fee_config_update: "Fee model changed",
+  fee_config_update: "Platform fee changed",
+  organizer_fee_override_set: "Organizer fee override set",
+  organizer_fee_override_clear: "Organizer fee override cleared",
 };
+
+// Actions that target an organizer — clicking the badge deep-links to
+// that organizer's admin detail page. Easier to investigate "why did
+// Lymora's payouts look weird last month" by jumping straight to the
+// org from the audit row.
+const ORG_TARGETED_ACTIONS = new Set<string>([
+  "organizer_fee_override_set",
+  "organizer_fee_override_clear",
+]);
 
 export default async function AdminAuditPage() {
   const admin = createAdminSupabase();
@@ -65,9 +76,16 @@ export default async function AdminAuditPage() {
                     })}
                   </p>
                 </div>
-                {entry.target_type && (
+                {entry.target_type && entry.target_id && ORG_TARGETED_ACTIONS.has(entry.action) ? (
+                  <a
+                    href={`/admin/organizers/${entry.target_id}`}
+                    className="hover:opacity-80 transition-opacity"
+                  >
+                    <Badge tone="default">{entry.target_type} →</Badge>
+                  </a>
+                ) : entry.target_type ? (
                   <Badge tone="default">{entry.target_type}</Badge>
-                )}
+                ) : null}
               </div>
 
               {entry.note && (

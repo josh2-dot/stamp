@@ -10,19 +10,19 @@ import {
 interface PlatformFees {
   base: number;
   rate: number;
+  /** True when these rates are a per-organizer override, not the default */
+  overridden: boolean;
 }
 
 /**
- * Client-side hook for reading platform fee config. Used by the organizer's
- * payout-preview UI in /dashboard/new and /dashboard/events/[id]/edit.
+ * Client-side hook for reading the caller's effective fee config.
+ *
+ * For signed-in organizers, the values reflect their per-organizer override
+ * if one exists, otherwise the platform default. The `overridden` flag lets
+ * the UI distinguish "Your custom rate" from "Standard fee".
  *
  * Fetches once on mount. While the fetch is in flight, returns the
- * compile-time fallback values so the form preview always shows something
- * reasonable. If admins changed the fee meaningfully, the preview will
- * update once the fetch resolves (a few hundred ms typically).
- *
- * The hook also returns convenience calculators bound to the loaded rates,
- * so consumers don't have to thread the values manually.
+ * compile-time fallback values.
  */
 export function usePlatformFees(): {
   fees: PlatformFees;
@@ -33,6 +33,7 @@ export function usePlatformFees(): {
   const [fees, setFees] = useState<PlatformFees>({
     base: FEE_BASE_KOBO_FALLBACK,
     rate: FEE_RATE_BPS_FALLBACK,
+    overridden: false,
   });
   const [loaded, setLoaded] = useState(false);
 
@@ -46,7 +47,11 @@ export function usePlatformFees(): {
           typeof data?.fee_base_kobo === "number" &&
           typeof data?.fee_rate_bps === "number"
         ) {
-          setFees({ base: data.fee_base_kobo, rate: data.fee_rate_bps });
+          setFees({
+            base: data.fee_base_kobo,
+            rate: data.fee_rate_bps,
+            overridden: Boolean(data.overridden),
+          });
         }
         setLoaded(true);
       })

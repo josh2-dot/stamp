@@ -6,20 +6,24 @@ import {
 } from "@/lib/fee-math";
 
 /**
- * STAMP platform fee — central, NOT organizer-configurable.
+ * STAMP platform fees — central and DB-driven.
  *
- * Fee values are stored in the `platform_config` table so admins can change
- * them without a code deploy (see /admin/fees). This module reads them
- * with a short TTL cache, fronted by compile-time fallbacks from
- * lib/fee-math.ts in case the DB read ever fails.
+ * Two layers:
+ *   1. platform_config (single row, migration 008) — the default rates
+ *      applied to most organizers. Edited at /admin/fees.
+ *   2. organizers.custom_fee_* (migration 009) — per-organizer overrides
+ *      for early partners, big customers, internal accounts. Edited at
+ *      /admin/organizers/[id]. NULL on both = no override.
  *
- * This file is server-only. Client components that need to do fee math
- * should import lib/fee-math.ts directly (pure constants + helpers) and
- * fetch live values via /api/platform/config — see lib/use-platform-fees.ts.
+ * Override resolution: an organizer's effective rates are their override
+ * if set, otherwise the platform default. The org-aware helpers below
+ * do this resolution in one query (LEFT JOIN-like, but small enough to
+ * just keep two queries here for readability).
+ *
+ * This file is server-only. Client components: import lib/fee-math.ts
+ * for the pure helpers, fetch live values via /api/platform/config.
  */
 
-// Re-export the fallback constants so server callers don't have to know
-// the math module exists. Keeps the "fee-rules" surface coherent.
 export { FEE_BASE_KOBO_FALLBACK, FEE_RATE_BPS_FALLBACK };
 
 interface FeeConfig {
@@ -27,10 +31,8 @@ interface FeeConfig {
   rate: number;
 }
 
-// Module-level cache. On a single Vercel function instance the same fee
-// config is reused across requests within the TTL. Admin fee changes
-// propagate within ~60s without explicit invalidation, or immediately
-// when /api/admin/fees calls invalidateFeeCache() on save.
+// ---- Global (default) config, 60s in-memory cache ----------------------
+
 const CACHE_TTL_MS = 60_000;
 let cached: { config: FeeConfig; expiresAt: number } | null = null;
 
@@ -69,10 +71,63 @@ export function invalidateFeeCache(): void {
   cached = null;
 }
 
+// ---- Per-organizer effective rates -----------------------------------
+
+/**
+ * Resolve the effective fees for a specific organizer.
+ *  - If the organizer has custom_fee_base_kobo and custom_fee_rate_bps
+ *    set, use those.
+ *  - Otherwise, fall back to the platform default.
+ *
+ * `overridden` is true when the override is in play, so callers (e.g. the
+ * admin UI) can render "Default" vs "Override" without a separate query.
+ */
+export async function getEffectiveFees(
+  organizerId: string,
+): Promise<FeeConfig & { overridden: boolean }> {
+  const admin = createAdminSupabase();
+  const { data, error } = await admin
+    .from("organizers")
+    .select("custom_fee_base_kobo, custom_fee_rate_bps")
+    .eq("id", organizerId)
+    .maybeSingle();
+
+  if (
+    !error &&
+    data &&
+    data.custom_fee_base_kobo !== null &&
+    data.custom_fee_rate_bps !== null
+  ) {
+    return {
+      base: Number(data.custom_fee_base_kobo),
+      rate: Number(data.custom_fee_rate_bps),
+      overridden: true,
+    };
+  }
+
+  const defaults = await getPlatformFees();
+  return { ...defaults, overridden: false };
+}
+
+// ---- Tier-side calculators ------------------------------------------
+
 export async function calculatePlatformFee(
   organizerPriceKobo: number,
 ): Promise<number> {
   const { base, rate } = await getPlatformFees();
+  const variable = Math.round((organizerPriceKobo * rate) / 10_000);
+  return base + variable;
+}
+
+/**
+ * Same as calculatePlatformFee, but applies the organizer's override
+ * if they have one. Tier create / edit routes should use this.
+ */
+export async function calculatePlatformFeeForOrganizer(
+  organizerId: string,
+  organizerPriceKobo: number,
+): Promise<number> {
+  const { base, rate } = await getEffectiveFees(organizerId);
   const variable = Math.round((organizerPriceKobo * rate) / 10_000);
   return base + variable;
 }

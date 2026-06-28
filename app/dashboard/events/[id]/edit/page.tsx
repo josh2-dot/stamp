@@ -602,6 +602,9 @@ function PayoutPreview({ priceNaira }: { priceNaira: number }) {
   const baseNaira = fees.base / 100;
   const ratePct = fees.rate / 100;
   const feeFormula = `₦${baseNaira.toLocaleString()} + ${ratePct}%`;
+  const feeLabel = fees.overridden
+    ? `Your custom rate (${feeFormula})`
+    : `STAMP's ${feeFormula}`;
 
   return (
     <div className="pt-3 mt-1 border-t border-stamp-border space-y-1.5 text-xs">
@@ -616,7 +619,7 @@ function PayoutPreview({ priceNaira }: { priceNaira: number }) {
         <span className="text-stamp-muted-2 tabular-nums">{formatNaira(buyerKobo)}</span>
       </div>
       <p className="text-[11px] text-stamp-muted-2">
-        STAMP's {feeFormula} ({formatNaira(feeKobo)}) is added silently on top.
+        {feeLabel} ({formatNaira(feeKobo)}) is added silently on top.
       </p>
       {steep && (
         <p className="text-stamp-gold text-[11px] pt-1.5 border-t border-stamp-border">

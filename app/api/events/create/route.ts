@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { slugify, withSuffix } from "@/lib/slug";
-import { calculatePlatformFee } from "@/lib/fee-rules";
+import { calculatePlatformFeeForOrganizer } from "@/lib/fee-rules";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -105,8 +105,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Couldn't create event" }, { status: 500 });
   }
 
-  // Insert tiers — service_fee is computed centrally, not supplied by client.
-  // calculatePlatformFee reads the DB-stored fee config (with cache).
+  // Insert tiers — service_fee is computed centrally, with any per-organizer
+  // override applied. Organizers cannot set their own fee even via tampered
+  // requests; the field comes off the server-resolved rates.
   const tierRows = await Promise.all(
     body.tiers.map(async (t, idx) => {
       const priceKobo = Math.round(t.price_naira * 100);
@@ -114,7 +115,10 @@ export async function POST(req: NextRequest) {
         event_id: event.id,
         name: t.name.trim(),
         price: priceKobo,
-        service_fee: await calculatePlatformFee(priceKobo),
+        service_fee: await calculatePlatformFeeForOrganizer(
+          organizer.id,
+          priceKobo,
+        ),
         capacity: Math.floor(t.capacity),
         sort_order: idx,
       };

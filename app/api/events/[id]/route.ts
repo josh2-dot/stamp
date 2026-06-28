@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
-import { calculatePlatformFee } from "@/lib/fee-rules";
+import { calculatePlatformFeeForOrganizer } from "@/lib/fee-rules";
 import type { EditEventRequest, EditEventResponse } from "@/types";
 
 export const runtime = "nodejs";
@@ -210,8 +210,12 @@ export async function PATCH(
         event_id: event.id,
         name: tier.name.trim(),
         price: priceKobo,
-        // STAMP fee, recomputed every save in case the rules change
-        service_fee: await calculatePlatformFee(priceKobo),
+        // STAMP fee, recomputed every save in case the rules change or
+        // an admin set/cleared this organizer's override.
+        service_fee: await calculatePlatformFeeForOrganizer(
+          organizer.id,
+          priceKobo,
+        ),
         capacity: Math.floor(tier.capacity),
         sort_order: sortOrder,
       };

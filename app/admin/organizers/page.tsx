@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { Card } from "@/components/ui/Card";
 import { Badge } from "@/components/ui/Badge";
@@ -8,12 +9,11 @@ export const dynamic = "force-dynamic";
 export default async function AdminOrganizersPage() {
   const admin = createAdminSupabase();
 
-  // Pull all organizers + their event count + lifetime tickets sold.
-  // Two queries because we don't have a Postgres view for this yet —
-  // worth one if the list grows past a few hundred.
   const { data: organizers } = await admin
     .from("organizers")
-    .select("id, name, email, phone, paystack_recipient_code, created_at")
+    .select(
+      "id, name, email, phone, paystack_recipient_code, created_at, custom_fee_base_kobo, custom_fee_rate_bps",
+    )
     .order("created_at", { ascending: false })
     .limit(200);
 
@@ -44,8 +44,6 @@ export default async function AdminOrganizersPage() {
         .eq("status", "paid");
 
       for (const t of tickets ?? []) {
-        // Supabase returns the joined row as either an object or array
-        // depending on the relationship cardinality detected — normalize.
         const ev = Array.isArray(t.events) ? t.events[0] : t.events;
         const orgId = (ev as { organizer_id: string } | undefined)?.organizer_id;
         if (orgId) {
@@ -65,7 +63,7 @@ export default async function AdminOrganizersPage() {
           </h1>
         </div>
         <p className="text-stamp-muted-2 text-sm">
-          {(organizers ?? []).length} total · most recent first
+          {(organizers ?? []).length} total · click to view + manage
         </p>
       </div>
 
@@ -77,6 +75,7 @@ export default async function AdminOrganizersPage() {
               <th className="px-4 py-3 font-medium">Contact</th>
               <th className="px-4 py-3 font-medium">Events</th>
               <th className="px-4 py-3 font-medium">Sold</th>
+              <th className="px-4 py-3 font-medium">Fee</th>
               <th className="px-4 py-3 font-medium">Payout</th>
               <th className="px-4 py-3 font-medium">Joined</th>
             </tr>
@@ -85,9 +84,22 @@ export default async function AdminOrganizersPage() {
             {(organizers ?? []).map((o) => {
               const phonePending = o.phone?.startsWith("PENDING_");
               const payoutReady = !!o.paystack_recipient_code;
+              const hasOverride =
+                o.custom_fee_base_kobo !== null &&
+                o.custom_fee_rate_bps !== null;
               return (
-                <tr key={o.id} className="hover:bg-stamp-surface2/50">
-                  <td className="px-4 py-3 text-stamp-white">{o.name}</td>
+                <tr
+                  key={o.id}
+                  className="hover:bg-stamp-surface2/50 transition-colors"
+                >
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/admin/organizers/${o.id}`}
+                      className="text-stamp-white hover:text-stamp-orange"
+                    >
+                      {o.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-stamp-muted-2 text-xs">
                     {o.email ?? "—"}
                     <br />
@@ -102,6 +114,17 @@ export default async function AdminOrganizersPage() {
                   </td>
                   <td className="px-4 py-3 tabular-nums">
                     {(ticketsByOrg.get(o.id) ?? 0).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    {hasOverride ? (
+                      <span className="text-stamp-orange tabular-nums">
+                        ₦{(Number(o.custom_fee_base_kobo) / 100).toLocaleString()}
+                        {" + "}
+                        {(Number(o.custom_fee_rate_bps) / 100).toLocaleString()}%
+                      </span>
+                    ) : (
+                      <span className="text-stamp-muted-2">Default</span>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {payoutReady ? (
@@ -122,7 +145,7 @@ export default async function AdminOrganizersPage() {
             })}
             {(organizers ?? []).length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-12 text-center text-stamp-muted-2">
+                <td colSpan={7} className="px-4 py-12 text-center text-stamp-muted-2">
                   No organizers yet.
                 </td>
               </tr>
