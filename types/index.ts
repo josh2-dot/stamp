@@ -29,6 +29,11 @@ export interface Event {
   scanner_secret: string;
   is_active: boolean;
   created_at: string;
+  // Awards module (migration 012). Optional because legacy data may not
+  // have it materialized yet — treat undefined as false.
+  awards_enabled?: boolean;
+  awards_module_fee_charged_kobo?: number | null;
+  awards_module_fee_charged_at?: string | null;
 }
 
 export interface TicketTier {

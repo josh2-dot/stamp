@@ -12,6 +12,8 @@ import { CompTicketCard } from "@/components/dashboard/CompTicketCard";
 import { Badge } from "@/components/ui/Badge";
 import { Card } from "@/components/ui/Card";
 import { Eyebrow } from "@/components/ui/Eyebrow";
+import { Button } from "@/components/ui/Button";
+import { CopyButton } from "@/components/ui/CopyButton";
 import { createBrowserSupabase } from "@/lib/supabase/browser";
 import type { DashboardSnapshot } from "@/types";
 
@@ -197,6 +199,26 @@ export default function EventDashboardPage() {
               tiers={snapshot.tiers}
               onIssued={fetchSnapshot}
             />
+
+            {/* Awards module — quiet entry point. When awards are
+                enabled, shows a status line; when not, an invitation. */}
+            <Card>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Eyebrow>Awards</Eyebrow>
+                  <p className="text-xs text-stamp-muted-2 mt-1">
+                    {ev.awards_enabled
+                      ? "Run nominations, voting, and reveal."
+                      : "Add voting for Best Dressed, MC of the Year, etc."}
+                  </p>
+                </div>
+                <Link href={`/dashboard/events/${ev.id}/awards`}>
+                  <Button size="sm" variant="ghost">
+                    {ev.awards_enabled ? "Manage →" : "Set up →"}
+                  </Button>
+                </Link>
+              </div>
+            </Card>
           </div>
 
           <LiveFeed tickets={snapshot.recentTickets} />
@@ -206,19 +228,7 @@ export default function EventDashboardPage() {
   );
 }
 
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        navigator.clipboard.writeText(text);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1500);
-      }}
-      className="px-4 py-3 rounded-md border border-stamp-border bg-stamp-surface2 text-sm text-stamp-white hover:border-stamp-orange transition-colors"
-    >
-      {copied ? "✓ Copied" : "Copy"}
-    </button>
-  );
+function CopyButtonLegacy_REMOVED({ text }: { text: string }) {
+  return null;
 }
+// CopyButton lifted to @/components/ui/CopyButton
