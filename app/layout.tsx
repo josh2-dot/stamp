@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Syne, DM_Sans } from "next/font/google";
 import "./globals.css";
+import { ToastProvider } from "@/components/ui/Toast";
 
 const syne = Syne({
   subsets: ["latin"],
@@ -36,7 +37,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${syne.variable} ${dmSans.variable}`}>
       <body className="bg-stamp-black text-stamp-white font-sans antialiased min-h-screen">
-        {children}
+        {/* Skip-to-content link — visually hidden until keyboard-focused,
+            then materializes top-left as the first tab stop on every page.
+            Targets #main, which PageShell now applies to its <main>. */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-stamp-orange focus:text-stamp-black focus:rounded-md focus:font-medium focus:text-sm focus:shadow-stamp-glow"
+        >
+          Skip to content
+        </a>
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

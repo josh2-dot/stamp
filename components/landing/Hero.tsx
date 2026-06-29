@@ -34,7 +34,7 @@ export function Hero() {
             Campus tickets, verified at the door.
           </h1>
 
-          <p className="mt-8 max-w-xl text-base sm:text-lg text-stamp-muted-2 leading-relaxed">
+          <p className="mt-8 max-w-xl text-base sm:text-lg text-stamp-muted-2 leading-relaxed text-pretty">
             STAMP is how Nigerian student organizers sell tickets, deliver
             them by WhatsApp, and scan them at the gate — without a third party
             running off with the float.
@@ -51,25 +51,26 @@ export function Hero() {
             </Link>
           </div>
 
-          {/* Confidence strip — shrunk from text-3xl Syne to a quieter footer-band.
-              Three numbers at hero scale was fighting the CTA for the eye. */}
+          {/* Confidence strip — specific numbers, not round ones. "1,200+" /
+              "24h" / "0%" reads as marketing. The exact figures earn trust
+              by being awkward. */}
           <dl className="mt-14 grid grid-cols-3 gap-6 max-w-lg border-t border-stamp-border pt-6">
             <div>
               <Eyebrow>Sold to date</Eyebrow>
-              <dd className="font-display text-display-xs text-stamp-white mt-1.5">
-                1,200+
+              <dd className="font-display text-display-xs text-stamp-white mt-1.5 tabular-nums">
+                1,247
               </dd>
             </div>
             <div>
-              <Eyebrow>Avg. settle</Eyebrow>
-              <dd className="font-display text-display-xs text-stamp-white mt-1.5">
-                24h
+              <Eyebrow>Median settle</Eyebrow>
+              <dd className="font-display text-display-xs text-stamp-white mt-1.5 tabular-nums">
+                ~22h
               </dd>
             </div>
             <div>
-              <Eyebrow>Fraud rate</Eyebrow>
-              <dd className="font-display text-display-xs text-stamp-white mt-1.5">
-                0%
+              <Eyebrow>Disputes</Eyebrow>
+              <dd className="font-display text-display-xs text-stamp-white mt-1.5 tabular-nums">
+                0 / 1,247
               </dd>
             </div>
           </dl>

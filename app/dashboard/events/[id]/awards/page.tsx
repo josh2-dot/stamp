@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Badge } from "@/components/ui/Badge";
+import { useToast } from "@/components/ui/Toast";
 import { formatNaira } from "@/lib/format";
 import { PhaseChip } from "@/components/awards/PhaseChip";
 import { CategoryFormDialog } from "@/components/awards/CategoryFormDialog";
@@ -188,6 +189,7 @@ interface CategoryRowProps {
 
 function CategoryRow({ eventId, category, onEdit, onChange }: CategoryRowProps) {
   const [busy, setBusy] = useState(false);
+  const { toast } = useToast();
   const phase = category.phase;
 
   // Each phase has its own primary affordance — the "what would I do next?"
@@ -216,7 +218,11 @@ function CategoryRow({ eventId, category, onEdit, onChange }: CategoryRowProps) 
     });
     const data = await res.json();
     if (!res.ok) {
-      alert(data.error || "Couldn't advance");
+      toast({
+        tone: "error",
+        title: "Couldn't advance phase",
+        body: data.error,
+      });
       setBusy(false);
       return;
     }

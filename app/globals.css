@@ -7,10 +7,37 @@
     color-scheme: dark;
   }
 
+  html {
+    /* Smooth scroll for in-page hash links (Hero → #pricing, etc.) and the
+       skip-to-content link. Respects prefers-reduced-motion via the
+       browser's own logic. */
+    scroll-behavior: smooth;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    /* Belt-and-suspenders for animation tokens — Tailwind's animate-* utilities
+       reference theme animations directly, so we kill them here for users who
+       asked. Per-page guards (e.g. projector reveal) layer on top of this. */
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
   html,
   body {
     background-color: #0a0a14;
     color: #f7f6f2;
+    /* Tighten body tracking for screen rendering at 14-16px — DM Sans benefits
+       from a touch of negative tracking on dark backgrounds. Invisible alone,
+       compounds across the product. */
+    letter-spacing: -0.003em;
   }
 
   /* Selection */
@@ -47,7 +74,14 @@
 }
 
 @layer utilities {
+  /* Last-line balance — used on display headings. */
   .text-balance {
     text-wrap: balance;
+  }
+  /* Pretty wrapping — kills orphan words on body paragraphs. Browser
+     support is recent (Chrome 117+, Safari 17.4+); falls back to default
+     wrap behavior elsewhere with no visual regression. */
+  .text-pretty {
+    text-wrap: pretty;
   }
 }

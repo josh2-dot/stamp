@@ -142,80 +142,26 @@ export default function ProjectorScreenPage() {
 
   return (
     <main className="fixed inset-0 bg-black overflow-hidden flex flex-col">
+      {/* All keyframes (stamp-drop, screen-shake, name-rise, seal-ambient)
+          live in tailwind.config.ts as named animations. The reduced-motion
+          guard below disables the entry animations for users who've asked
+          the browser to respect prefers-reduced-motion — the winner still
+          reveals, but no falling stamp, no shake. */}
       <style jsx global>{`
-        /* Stamp impact — falls from above, rotates into place, settles
-           with a tiny bounce. Single keyframe sequence, no JS animation
-           library required. */
-        @keyframes stamp-drop {
-          0% {
-            transform: translateY(-60vh) scale(1.6) rotate(-18deg);
-            opacity: 0;
+        @media (prefers-reduced-motion: reduce) {
+          .reveal-stamp,
+          .reveal-shake,
+          .reveal-name {
+            animation: none !important;
           }
-          40% {
-            transform: translateY(-10vh) scale(1.3) rotate(-12deg);
-            opacity: 0.85;
+          .reveal-stamp {
+            transform: rotate(-3deg);
           }
-          /* Impact moment — overshoot then settle */
-          70% {
-            transform: translateY(0) scale(0.95) rotate(-3deg);
+          .reveal-name {
             opacity: 1;
+            transform: none;
+            filter: none;
           }
-          85% {
-            transform: translateY(0) scale(1.05) rotate(-4deg);
-          }
-          100% {
-            transform: translateY(0) scale(1) rotate(-3deg);
-            opacity: 1;
-          }
-        }
-
-        /* Subtle screen shake on impact — sells the weight */
-        @keyframes screen-shake {
-          0%, 100% { transform: translate(0, 0); }
-          10% { transform: translate(-2px, 1px); }
-          20% { transform: translate(2px, -1px); }
-          30% { transform: translate(-1px, -1px); }
-          40% { transform: translate(1px, 1px); }
-          50% { transform: translate(0, 0); }
-        }
-
-        /* Winner name reveal — letters fade in with subtle upward drift */
-        @keyframes name-rise {
-          0% {
-            opacity: 0;
-            transform: translateY(24px);
-            filter: blur(8px);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0);
-            filter: blur(0);
-          }
-        }
-
-        /* Idle ambient glow on the stamp when settled */
-        @keyframes seal-ambient {
-          0%, 100% {
-            filter: drop-shadow(0 0 24px rgba(255, 92, 26, 0.15));
-          }
-          50% {
-            filter: drop-shadow(0 0 48px rgba(255, 92, 26, 0.35));
-          }
-        }
-
-        .stamp-anim {
-          animation: stamp-drop 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-        }
-        .stamp-settled {
-          transform: rotate(-3deg);
-          animation: seal-ambient 4s ease-in-out infinite;
-        }
-        .impact-shake {
-          animation: screen-shake 400ms cubic-bezier(0.4, 0, 0.6, 1);
-          animation-delay: 600ms;
-        }
-        .name-anim {
-          animation: name-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
 
@@ -244,7 +190,7 @@ export default function ProjectorScreenPage() {
       <div
         className={`flex-1 flex items-center justify-center px-8 ${
           stampPlayed && previousPhaseRef.current !== "revealed"
-            ? "impact-shake"
+            ? "reveal-shake animate-screen-shake"
             : ""
         }`}
       >
@@ -270,22 +216,23 @@ export default function ProjectorScreenPage() {
           <div className="text-center max-w-5xl w-full">
             {/* THE stamp */}
             <div
-              className={`flex justify-center text-stamp-orange ${
+              className={`reveal-stamp flex justify-center text-stamp-orange ${
                 stampPlayed
                   ? previousPhaseRef.current === "revealed"
-                    ? "stamp-settled"  // page-loaded-revealed = no animation
-                    : "stamp-anim stamp-settled"
+                    ? "animate-seal-ambient [transform:rotate(-3deg)]"  // page-loaded-revealed = no entry anim
+                    : "animate-stamp-drop animate-seal-ambient"
                   : ""
               }`}
-              style={{
-                animationDelay: stampPlayed && previousPhaseRef.current !== "revealed" ? "0ms" : undefined,
-              }}
             >
               <StampSeal size={260} />
             </div>
 
             {/* Winner name — display-xl with a leading eyebrow */}
-            <div className={`mt-12 ${showName ? "name-anim" : "opacity-0"}`}>
+            <div
+              className={`reveal-name mt-12 ${
+                showName ? "animate-name-rise" : "opacity-0"
+              }`}
+            >
               <p className="font-mono text-xs uppercase tracking-[0.5em] text-stamp-gold mb-6">
                 Winner
               </p>

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Badge } from "@/components/ui/Badge";
 import { CopyButton } from "@/components/ui/CopyButton";
+import { useToast } from "@/components/ui/Toast";
 import { formatNaira } from "@/lib/format";
 import { PhaseChip } from "@/components/awards/PhaseChip";
 import { NominationsModerationPanel } from "@/components/awards/NominationsModerationPanel";
@@ -36,6 +37,7 @@ export default function CategoryManagementPage() {
   const params = useParams<{ id: string; categoryId: string }>();
   const [data, setData] = useState<FeedShape | null>(null);
   const [revealOpen, setRevealOpen] = useState(false);
+  const { toast } = useToast();
 
   const load = async () => {
     const res = await fetch(
@@ -57,7 +59,11 @@ export default function CategoryManagementPage() {
     );
     const json = await res.json();
     if (!res.ok) {
-      alert(json.error || "Couldn't advance");
+      toast({
+        tone: "error",
+        title: "Couldn't advance phase",
+        body: json.error,
+      });
       return;
     }
     load();

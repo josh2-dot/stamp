@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Badge } from "@/components/ui/Badge";
+import { useToast } from "@/components/ui/Toast";
 import type { AwardNominee } from "@/types";
 
 interface RawGroup {
@@ -45,6 +46,7 @@ export function NominationsModerationPanel({
   const [mergeTarget, setMergeTarget] = useState<{
     group: RawGroup;
   } | null>(null);
+  const { toast } = useToast();
 
   const activeNominees = nominees.filter((n) => !n.is_excluded);
 
@@ -62,13 +64,26 @@ export function NominationsModerationPanel({
     setBusy(null);
     setMergeTarget(null);
     if (!res.ok) {
-      alert(data.error || "Couldn't promote");
+      toast({
+        tone: "error",
+        title: "Couldn't promote nomination",
+        body: data.error,
+      });
       return;
     }
+    toast({
+      tone: "success",
+      title: intoNomineeId
+        ? `Merged into ${activeNominees.find((n) => n.id === intoNomineeId)?.display_name ?? "ballot"}`
+        : `Promoted "${group.sample_name}" to ballot`,
+    });
     onChange();
   };
 
   const handleReject = async (group: RawGroup) => {
+    // confirm() is the one native dialog kept for V1 — it's a destructive
+    // confirmation, not an error display. A dedicated <ConfirmDialog> would
+    // be the natural follow-up, but the alert()s were the more visible regression.
     if (!confirm(`Reject all ${group.count} nominations for "${group.sample_name}"?`)) return;
     setBusy(group.name_normalized);
     const res = await fetch("/api/awards/nominations/reject", {
@@ -79,9 +94,17 @@ export function NominationsModerationPanel({
     setBusy(null);
     if (!res.ok) {
       const data = await res.json();
-      alert(data.error || "Couldn't reject");
+      toast({
+        tone: "error",
+        title: "Couldn't reject nominations",
+        body: data.error,
+      });
       return;
     }
+    toast({
+      tone: "info",
+      title: `Rejected "${group.sample_name}"`,
+    });
     onChange();
   };
 
