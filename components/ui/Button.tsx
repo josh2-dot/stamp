@@ -10,37 +10,61 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   loading?: boolean;
   fullWidth?: boolean;
   /**
-   * Apply the brand orange glow shadow — reserved for the single highest-intent
-   * CTA on a page (Hero "Start selling", checkout "Pay", dashboard "+ New event",
-   * etc). When every primary glows, none of them do.
+   * Adds the vermillion halo + inset ink line to the primary variant.
+   * Reserved for the single highest-intent CTA on a page. When every
+   * primary glows, none of them do — that rule holds on cream too.
    */
   glow?: boolean;
 }
 
+// Base — a slightly heavier press feel than before. `translate-y-px` on
+// active gives the tactile "stamped into paper" cue on primary; the
+// tighter radius (6px, matching DEFAULT) reads as printed matter
+// rather than a soft chip.
 const base =
-  "inline-flex items-center justify-center gap-2 font-semibold rounded-md " +
-  "transition-all duration-150 select-none whitespace-nowrap " +
+  "inline-flex items-center justify-center gap-2 font-medium rounded-md " +
+  "transition-[transform,background-color,box-shadow,border-color] duration-150 " +
+  "select-none whitespace-nowrap will-change-transform " +
   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 " +
-  "focus-visible:ring-offset-stamp-black disabled:opacity-50 disabled:cursor-not-allowed";
+  "focus-visible:ring-offset-stamp-black " +
+  "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:translate-y-0";
 
 const variants: Record<Variant, string> = {
+  // Vermillion CTA — cream text is the "stamped" ink read. The
+  // inset hairline at the bottom gives it a physical lip, so the
+  // active:translate-y-px feels earned.
   primary:
-    "bg-stamp-orange text-stamp-black hover:bg-stamp-orange/90 " +
-    "focus-visible:ring-stamp-orange active:translate-y-px",
+    "bg-stamp-orange text-stamp-black " +
+    "shadow-[inset_0_-1px_0_rgba(20,16,12,0.35)] " +
+    "hover:bg-[#B32E17] " +
+    "active:translate-y-px active:shadow-[inset_0_-1px_0_rgba(20,16,12,0.5)] " +
+    "focus-visible:ring-stamp-orange",
+  // Secondary — outlined ink on paper. No fill. The hover deepens
+  // the border instead of lightening the fill; feels editorial.
   secondary:
-    "bg-stamp-surface2 text-stamp-white border border-stamp-border " +
-    "hover:bg-stamp-surface2/70 hover:border-stamp-muted/50 " +
-    "focus-visible:ring-stamp-muted",
+    "bg-transparent text-stamp-white border border-stamp-white/40 " +
+    "hover:border-stamp-white hover:bg-stamp-white/[0.04] " +
+    "active:translate-y-px " +
+    "focus-visible:ring-stamp-white/50",
+  // Ghost — no border, faint underline on hover. Used for tertiary
+  // affordances that shouldn't compete with the primary.
   ghost:
-    "bg-transparent text-stamp-white hover:bg-stamp-surface " +
-    "focus-visible:ring-stamp-muted",
+    "bg-transparent text-stamp-white/80 " +
+    "hover:text-stamp-white hover:bg-stamp-surface " +
+    "focus-visible:ring-stamp-white/30",
+  // Danger — bordeaux fill, cream text. Same physical press as primary.
   danger:
-    "bg-stamp-red text-stamp-white hover:bg-stamp-red/90 " +
+    "bg-stamp-red text-stamp-black " +
+    "shadow-[inset_0_-1px_0_rgba(20,16,12,0.35)] " +
+    "hover:bg-[#671915] " +
+    "active:translate-y-px " +
     "focus-visible:ring-stamp-red",
 };
 
+// Sizes — bumped padding on lg slightly; Fraunces buttons need a touch
+// more breathing room than Syne to feel deliberate rather than cramped.
 const sizes: Record<Size, string> = {
-  sm: "px-3 py-1.5 text-sm",
+  sm: "px-3.5 py-1.5 text-sm",
   md: "px-5 py-2.5 text-sm",
   lg: "px-7 py-3.5 text-base",
 };
@@ -68,7 +92,10 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button
         variants[variant],
         sizes[size],
         fullWidth && "w-full",
-        glow && variant === "primary" && "shadow-stamp-glow",
+        // Glow — only when explicitly opted in AND variant is primary.
+        // Silently no-ops on secondary/ghost/danger, so scoped call
+        // sites can't accidentally halo the wrong CTA.
+        glow && variant === "primary" && "shadow-stamp-glow hover:shadow-stamp-glow",
         className,
       )}
       {...rest}

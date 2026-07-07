@@ -1,56 +1,100 @@
-import { Card } from "@/components/ui/Card";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 
 const steps = [
   {
     n: "01",
-    title: "Buyer pays in 30 seconds",
+    kicker: "Buyer pays",
+    title: "in 30 seconds.",
     body: "Tap your event link. Pick a tier. Enter a phone number. Pay with Paystack — card, transfer, or USSD.",
     detail: "No login. No app to download. No begging for a screenshot.",
   },
   {
     n: "02",
-    title: "WhatsApp delivers the ticket",
+    kicker: "WhatsApp delivers",
+    title: "the ticket.",
     body: "Within seconds of payment, the ticket QR lands in the buyer's WhatsApp. SMS kicks in automatically if WhatsApp can't reach them.",
     detail: "Same line they use every day. Nothing to lose.",
   },
   {
     n: "03",
-    title: "Scan once at the door",
+    kicker: "Scan once",
+    title: "at the door.",
     body: "Any staff phone becomes a scanner. Tickets light up green or red. The door knows. The dashboard knows. You know.",
     detail: "One scan only — no resold tickets, no duplicates.",
   },
 ];
 
+/**
+ * How it works — broken out of the three-equal-cards AI grid. Each
+ * step is a horizontal band with the numeral set enormous on the left
+ * and the content flowing across the right two-thirds. The bottom
+ * hairline is a ledger-line, not a border-b — it thins toward the
+ * edges so section breaks feel like the paper is scored, not framed.
+ */
 export function HowItWorks() {
   return (
     <section id="how" className="relative py-24 lg:py-32">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="max-w-2xl mb-16">
-          <Eyebrow>How it works</Eyebrow>
-          <h2 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-3 text-balance">
-            Three steps. No middlemen.
-          </h2>
+        <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 mb-20 items-end">
+          <div className="lg:col-span-5">
+            <Eyebrow>How it works</Eyebrow>
+            <h2 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-4 text-balance">
+              Three steps.
+              <br />
+              <span className="italic text-stamp-muted-2">No middlemen.</span>
+            </h2>
+          </div>
+          <div className="lg:col-span-6 lg:col-start-7">
+            <p className="text-stamp-muted-2 text-pretty leading-relaxed">
+              The buyer flow is short on purpose. Every extra step is a
+              chance to lose the sale. STAMP is what happens when a
+              ticketing platform is designed against Nigerian bandwidth,
+              Nigerian phones, and Nigerian door queues — not California ones.
+            </p>
+          </div>
         </div>
 
-        {/* `accent` only on the first card per the "≤1 accent card per viewport"
-            rule. The numbered "01" already does the wayfinding work. */}
-        <div className="grid md:grid-cols-3 gap-5">
+        <ol className="space-y-0">
           {steps.map((s, i) => (
-            <Card key={s.n} accent={i === 0} className="flex flex-col h-full">
-              <span className="font-display text-display-sm text-stamp-orange mb-6">
-                {s.n}
-              </span>
-              <h3 className="font-display text-display-xs text-stamp-white mb-3 text-balance">
-                {s.title}
-              </h3>
-              <p className="text-stamp-white text-sm leading-relaxed">{s.body}</p>
-              <p className="text-stamp-muted text-xs mt-4 pt-4 border-t border-stamp-border italic">
-                {s.detail}
-              </p>
-            </Card>
+            <li key={s.n} className="ledger-line">
+              <div className="grid lg:grid-cols-12 gap-6 lg:gap-10 py-12">
+                {/* Enormous serif numeral — the step marker as
+                    typographic anchor. Fraunces at heavy display size
+                    with WONK on for the display-quirk axis. */}
+                <div className="lg:col-span-3">
+                  <span
+                    className="font-display block text-[5.5rem] sm:text-[7rem] leading-[0.85] text-stamp-orange"
+                    style={{
+                      fontVariationSettings:
+                        '"opsz" 144, "SOFT" 40, "WONK" 1',
+                    }}
+                  >
+                    {s.n}
+                  </span>
+                </div>
+                <div className="lg:col-span-6">
+                  <p className="text-stamp-muted uppercase text-[11px] tracking-[0.2em] font-medium mb-3">
+                    Step {s.n}
+                  </p>
+                  <h3 className="font-display text-display-sm sm:text-[2rem] leading-[1.1] text-stamp-white text-balance">
+                    {s.kicker}{" "}
+                    <span className="italic text-stamp-muted-2">{s.title}</span>
+                  </h3>
+                  <p className="text-stamp-white/90 mt-5 leading-relaxed max-w-lg">
+                    {s.body}
+                  </p>
+                </div>
+                <div className="lg:col-span-3 lg:pt-8">
+                  <div className="border-l-2 border-stamp-orange/60 pl-4">
+                    <p className="text-stamp-muted-2 text-sm italic leading-relaxed">
+                      {s.detail}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
     </section>
   );

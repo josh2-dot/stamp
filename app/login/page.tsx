@@ -54,8 +54,8 @@ function LoginPageFallback() {
     <PageShell maxWidth="sm">
       <div className="text-center">
         <Eyebrow align="center">Organizer access</Eyebrow>
-        <h1 className="font-display text-display-md text-stamp-white mt-2">
-          Loading…
+        <h1 className="font-display text-display-md text-stamp-white mt-4 text-balance">
+          <span className="italic text-stamp-muted-2">Loading…</span>
         </h1>
       </div>
     </PageShell>
@@ -328,21 +328,26 @@ function LoginPageInner() {
     <PageShell maxWidth="sm">
       <div className="text-center mb-10">
         <Eyebrow align="center">Organizer access</Eyebrow>
-        <h1 className="font-display text-display-md text-stamp-white mt-2">
-          {mode === "signup" ? "Set up your account." : "Welcome back."}
+        <h1 className="font-display text-display-md text-stamp-white mt-4 text-balance">
+          {mode === "signup" ? (
+            <>Set up your <span className="italic text-stamp-muted-2">account.</span></>
+          ) : (
+            <>Welcome <span className="italic text-stamp-orange">back.</span></>
+          )}
         </h1>
-        <p className="text-stamp-muted-2 text-sm mt-3">
+        <p className="text-stamp-muted-2 text-sm mt-4 max-w-xs mx-auto leading-relaxed">
           {mode === "signup"
             ? "Email and password. We handle the rest."
             : "Sign in with your email and password."}
         </p>
       </div>
 
-      {/* Mode tabs — the eye picks the active state from the elevated surface */}
+      {/* Mode toggle — segmented control with a stamped-in active state.
+          Slightly deeper cream for the moving pill, hairline separator. */}
       <div
         role="tablist"
         aria-label="Authentication mode"
-        className="flex gap-1 mb-4 p-1 bg-stamp-surface2 rounded-md border border-stamp-border"
+        className="flex gap-0 mb-5 p-1 bg-stamp-surface2 rounded-md border border-stamp-border shadow-stamp-well"
       >
         <button
           type="button"
@@ -350,9 +355,9 @@ function LoginPageInner() {
           aria-selected={mode === "signin"}
           onClick={() => switchMode("signin")}
           className={cn(
-            "flex-1 py-2 text-sm font-medium rounded-md transition-colors",
+            "flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200",
             mode === "signin"
-              ? "bg-stamp-surface text-stamp-white shadow-sm"
+              ? "bg-stamp-black text-stamp-white shadow-stamp-card"
               : "text-stamp-muted-2 hover:text-stamp-white",
           )}
         >
@@ -364,9 +369,9 @@ function LoginPageInner() {
           aria-selected={mode === "signup"}
           onClick={() => switchMode("signup")}
           className={cn(
-            "flex-1 py-2 text-sm font-medium rounded-md transition-colors",
+            "flex-1 py-2 text-sm font-medium rounded-md transition-all duration-200",
             mode === "signup"
-              ? "bg-stamp-surface text-stamp-white shadow-sm"
+              ? "bg-stamp-black text-stamp-white shadow-stamp-card"
               : "text-stamp-muted-2 hover:text-stamp-white",
           )}
         >

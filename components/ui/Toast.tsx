@@ -110,23 +110,26 @@ export function useToast(): ToastContextValue {
 // Viewport — the fixed-position stack
 // ============================================================
 
+// Tinted fills over cream — the alpha /10 trick that worked on dark
+// washes out against paper. Each tone gets a soft tinted background
+// matched to its ink pigment so the toast reads as a stamped notice.
 const toneStyles: Record<
   Tone,
   { border: string; iconBg: string; iconText: string }
 > = {
   success: {
-    border: "border-stamp-green/40",
-    iconBg: "bg-stamp-green/10",
+    border: "border-[#4A7A5F]",
+    iconBg: "bg-[#DCE6DA]",
     iconText: "text-stamp-green",
   },
   error: {
-    border: "border-stamp-red/40",
-    iconBg: "bg-stamp-red/10",
+    border: "border-stamp-red/60",
+    iconBg: "bg-[#EBD5CE]",
     iconText: "text-stamp-red",
   },
   warning: {
-    border: "border-stamp-gold/40",
-    iconBg: "bg-stamp-gold/10",
+    border: "border-[#B98E3B]",
+    iconBg: "bg-[#F1E4C4]",
     iconText: "text-stamp-gold",
   },
   info: {

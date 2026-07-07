@@ -9,13 +9,11 @@ type EyebrowProps<E extends EyebrowElement = "p"> = {
   as?: E;
   align?: "left" | "center";
   /**
-   * Color tone. Defaults to "muted" (subdued metadata).
-   *   accent  — brand orange, for focal moments
-   *   warning — gold, paired with tone="warning" Cards
-   *   success — green, paired with tone="success" Cards
-   *   danger  — red, for error eyebrows
-   *
-   * Replaces the old `accent` boolean + ad-hoc `!text-stamp-gold` overrides.
+   * Ink pigment. Defaults to "muted" (subdued metadata).
+   *   accent  — vermillion, for focal moments
+   *   warning — ochre, paired with tone="warning" Cards
+   *   success — forest green, paired with tone="success" Cards
+   *   danger  — bordeaux, for error eyebrows
    */
   tone?: Tone;
   /** @deprecated use tone="accent" instead. Kept for back-compat. */
@@ -23,22 +21,20 @@ type EyebrowProps<E extends EyebrowElement = "p"> = {
 } & Omit<ComponentPropsWithoutRef<E>, "as">;
 
 const toneColor: Record<Tone, string> = {
-  muted: "text-stamp-muted",
-  accent: "text-stamp-orange",
+  muted:   "text-stamp-muted",
+  accent:  "text-stamp-orange",
   warning: "text-stamp-gold",
   success: "text-stamp-green",
-  danger: "text-stamp-red",
+  danger:  "text-stamp-red",
 };
 
 /**
- * The single source of truth for "uppercase, letterspaced, xs" eyebrow text.
+ * The single source of truth for eyebrow labels.
  *
- * Replaces the old CardLabel + ad-hoc tracking values (0.18em, 0.20em, 0.25em,
- * 0.30em) and the `!text-stamp-gold` className escape that snuck back in on
- * the event dashboard's "Event deactivated" Card.
- *
- * Default tag is <p>; pass `as="label"` (with htmlFor) for form labels,
- * `as="span"` when nesting inside other text, etc.
+ * Editorial refinement: the accent eyebrow now paints the leading
+ * bracket as a small vermillion square, echoing the classification
+ * marks on Badge. Everything else is the same uppercase / tracked
+ * xs pattern, tightened by a hair (0.18em → cleaner on Inter Tight).
  */
 export function Eyebrow<E extends EyebrowElement = "p">({
   as,
@@ -50,19 +46,34 @@ export function Eyebrow<E extends EyebrowElement = "p">({
   ...rest
 }: EyebrowProps<E>) {
   const Tag = (as ?? "p") as ElementType;
-  // Back-compat: `accent={true}` still maps to tone="accent" when tone isn't set.
   const resolvedTone: Tone = tone ?? (accent ? "accent" : "muted");
   return (
     <Tag
       className={cn(
-        "text-xs uppercase tracking-[0.2em] font-medium",
+        // 11px, tighter tracking, semibold — reads as a printed caption
+        // label rather than a soft eyebrow. The uppercase small-caps
+        // treatment on Inter Tight is crisper than what DM Sans gave us.
+        "inline-flex items-center gap-2 text-[11px] uppercase font-semibold",
+        "tracking-[0.18em] leading-none",
         toneColor[resolvedTone],
-        align === "center" && "text-center",
+        align === "center" && "justify-center w-full",
         className,
       )}
       {...rest}
     >
-      {children}
+      {/* Bracket mark — a 6px filled square that anchors the eyebrow
+          to a specific pigment. Muted tone gets a hollow one instead;
+          the pigment moments earn the filled mark. */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "inline-block w-[6px] h-[6px] shrink-0",
+          resolvedTone === "muted"
+            ? "border border-current"
+            : "bg-current",
+        )}
+      />
+      <span>{children}</span>
     </Tag>
   );
 }

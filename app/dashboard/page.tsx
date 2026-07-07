@@ -58,28 +58,26 @@ export default async function DashboardPage() {
 
   return (
     <PageShell>
-      <div className="flex items-end justify-between mb-10 flex-wrap gap-4">
+      <div className="flex items-end justify-between mb-12 flex-wrap gap-4 pb-8 border-b border-stamp-border">
         <div>
-          {/* Sign out moved off the primary action row. It now lives as a
-              quiet text affordance attached to the account context — peers
-              with the email, not with the page actions. */}
+          {/* Sign-out is quieter — attached to the identity line as a
+              text affordance, not a page-level action. */}
           <Eyebrow>
-            Signed in as {organizer.email}
-            {" · "}
-            <form action="/api/auth/signout" method="post" className="inline">
-              <button
-                type="submit"
-                className="text-stamp-muted hover:text-stamp-orange transition-colors underline-offset-2 hover:underline"
-              >
-                Sign out
-              </button>
-            </form>
+            <span>Signed in as {organizer.email}</span>
           </Eyebrow>
-          <h1 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-2">
+          <h1 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-4 text-balance">
             Your events
           </h1>
+          <form action="/api/auth/signout" method="post" className="inline">
+            <button
+              type="submit"
+              className="text-xs text-stamp-muted-2 hover:text-stamp-orange transition-colors mt-3 underline-offset-4 hover:underline"
+            >
+              Sign out
+            </button>
+          </form>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {isAdminEmail(organizer.email) && (
             <Link href="/admin">
               <Button variant="ghost" size="sm">

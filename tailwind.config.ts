@@ -8,124 +8,144 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        // ============================================================
+        //  STAMP — "Certified Stub" palette
+        //  ------------------------------------------------------------
+        //  Cream paper, warm ink, single vermillion accent. Deliberate
+        //  pivot away from the dark-navy-plus-neon-orange fingerprint
+        //  the old palette shared with every AI-tech dashboard shipped
+        //  in 2024. Semantic token names preserved so every downstream
+        //  className carries through untouched.
+        //
+        //  Read as English: "black" = ink, "white" = paper. Same
+        //  intent as before — just the actual, physical version.
+        // ============================================================
         stamp: {
-          black: "#0A0A14",
-          surface: "#14141F",
-          surface2: "#1C1C2E",
-          border: "#252538",
-          orange: "#FF5C1A",
-          gold: "#F5C842",
-          white: "#F7F6F2",
-          muted: "#6B6B8A",
-          "muted-2": "#9696B5",
-          green: "#2DBD6E",
-          red: "#E84040",
+          // Paper family — warm, slightly desaturated cream.
+          // The base is close to unbleached kraft; each step down
+          // is a touch more oat / linen.
+          black:      "#EDE4CE",   // page background (paper)
+          surface:    "#E4DABE",   // cards, panels
+          surface2:   "#DACFAF",   // elevated wells, inputs
+          border:     "#C9BC97",   // hairline
+          // Ink family — warm near-black with olive undertone,
+          // reads as fountain-pen ink rather than digital #000.
+          white:      "#14100C",   // headlines, body — primary ink
+          "muted-2":  "#4A4432",   // secondary body (AA-safe everywhere)
+          muted:      "#7A7259",   // eyebrows, decorative meta (12px only)
+          // Accents.
+          orange:     "#C0331A",   // STAMP vermillion — the one accent
+          gold:       "#A6741A",   // deep ochre — warnings, not garnish
+          green:      "#2C5B3E",   // forest — gate verification only
+          red:        "#7A1F1C",   // bordeaux — errors, destructive
         },
       },
       fontFamily: {
-        display: ["var(--font-syne)", "system-ui", "sans-serif"],
-        sans: ["var(--font-dm-sans)", "system-ui", "sans-serif"],
+        // Fraunces for display — variable serif with real presence at
+        // large sizes. The `opsz` axis pulls in tighter as sizes shrink.
+        // Inter Tight for body — clean geometric sans, tighter than
+        // stock Inter, keeps its shape on the warm cream ground.
+        display: ["var(--font-fraunces)", "Georgia", "serif"],
+        sans:    ["var(--font-inter-tight)", "system-ui", "sans-serif"],
       },
       fontSize: {
-        // Display scale — pair with `font-display` for the Syne ExtraBold + tracking.
-        // Use the responsive prefixes (sm:, lg:) when a headline needs to scale up.
-        //   display-xl  → Hero only
-        //   display-lg  → Page H1
-        //   display-md  → Section H2, primary action moments (e.g. checkout headline)
-        //   display-sm  → Card H3, sub-section
-        //   display-xs  → Tile H4, kicker
-        "display-xl": ["4.5rem", { lineHeight: "0.95", letterSpacing: "-0.025em", fontWeight: "800" }],
-        "display-lg": ["3.5rem", { lineHeight: "0.95", letterSpacing: "-0.02em", fontWeight: "800" }],
-        "display-md": ["2.5rem", { lineHeight: "1", letterSpacing: "-0.015em", fontWeight: "800" }],
-        "display-sm": ["1.75rem", { lineHeight: "1.1", letterSpacing: "-0.01em", fontWeight: "800" }],
-        "display-xs": ["1.25rem", { lineHeight: "1.2", letterSpacing: "-0.005em", fontWeight: "800" }],
+        // Display scale — tighter tracking on the largest sizes since
+        // Fraunces' opsz already opens up at scale. Line-height slightly
+        // more generous than Syne because the serifs need breathing room.
+        "display-xl": ["4.75rem", { lineHeight: "0.98", letterSpacing: "-0.035em", fontWeight: "500" }],
+        "display-lg": ["3.75rem", { lineHeight: "1.00", letterSpacing: "-0.03em",  fontWeight: "500" }],
+        "display-md": ["2.625rem",{ lineHeight: "1.05", letterSpacing: "-0.025em", fontWeight: "500" }],
+        "display-sm": ["1.875rem",{ lineHeight: "1.15", letterSpacing: "-0.02em",  fontWeight: "500" }],
+        "display-xs": ["1.3125rem",{lineHeight: "1.25", letterSpacing: "-0.015em", fontWeight: "500" }],
       },
       borderRadius: {
-        sm: "8px",
-        DEFAULT: "8px",
-        md: "8px",
-        lg: "12px",
-        xl: "16px",
+        // Four steps — 6/10/16/full. Slightly tighter than the old
+        // 8/12/16 set: on cream, generous radii start feeling
+        // marshmallowy. Sharper corners read as printed matter.
+        sm:      "6px",
+        DEFAULT: "6px",
+        md:      "6px",
+        lg:      "10px",
+        xl:      "16px",
       },
       boxShadow: {
-        "stamp-glow": "0 0 0 1px rgba(255, 92, 26, 0.3), 0 8px 24px -8px rgba(255, 92, 26, 0.4)",
-        "stamp-card": "0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px -16px rgba(0, 0, 0, 0.6)",
+        // Warm shadows — tinted with the ink hue instead of pure black.
+        // Two-stop: a tight contact shadow + a longer diffuse fall.
+        "stamp-card":
+          "0 1px 0 rgba(255, 251, 235, 0.6) inset, " +
+          "0 1px 2px -1px rgba(74, 68, 50, 0.15), " +
+          "0 12px 32px -20px rgba(74, 68, 50, 0.28)",
+        // Vermillion halo for the one-per-page glow CTA.
+        // The 1px hairline gives buttons a "pressed into paper" feel.
+        "stamp-glow":
+          "inset 0 -1px 0 rgba(20, 16, 12, 0.25), " +
+          "0 0 0 1px rgba(192, 51, 26, 0.35), " +
+          "0 14px 32px -14px rgba(192, 51, 26, 0.55)",
+        // Deep well — used sparsely on inputs when we want them to feel
+        // pressed into the paper rather than laid on top.
+        "stamp-well":
+          "inset 0 1px 2px rgba(74, 68, 50, 0.14), " +
+          "inset 0 0 0 1px rgba(201, 188, 151, 0.6)",
       },
       keyframes: {
+        // Preserved from the original — all interactive motion tokens
+        // still resolve to the same names. Timing curves unchanged.
         "stamp-pulse": {
           "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
+          "50%":      { opacity: "0.4" },
         },
         "scan-sweep": {
-          "0%": { transform: "translateY(0)" },
+          "0%":   { transform: "translateY(0)" },
           "100%": { transform: "translateY(100%)" },
         },
-        // Toast entry — slides up from below + fades in. Short, snappy.
         "toast-in": {
-          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "0%":   { opacity: "0", transform: "translateY(8px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        // Projector reveal sequence — promoted from <style jsx global> on the
-        // reveal screen so all motion tokens live in one place. Each token
-        // matches the original timing curve.
+        // Projector reveal — kept intact, still snappy.
         "stamp-drop": {
-          "0%": {
-            transform: "translateY(-60vh) scale(1.6) rotate(-18deg)",
-            opacity: "0",
-          },
-          "40%": {
-            transform: "translateY(-10vh) scale(1.3) rotate(-12deg)",
-            opacity: "0.85",
-          },
-          "70%": {
-            transform: "translateY(0) scale(0.95) rotate(-3deg)",
-            opacity: "1",
-          },
-          "85%": {
-            transform: "translateY(0) scale(1.05) rotate(-4deg)",
-          },
-          "100%": {
-            transform: "translateY(0) scale(1) rotate(-3deg)",
-            opacity: "1",
-          },
+          "0%":   { transform: "translateY(-60vh) scale(1.6) rotate(-18deg)", opacity: "0" },
+          "40%":  { transform: "translateY(-10vh) scale(1.3) rotate(-12deg)", opacity: "0.85" },
+          "70%":  { transform: "translateY(0)     scale(0.95) rotate(-3deg)", opacity: "1" },
+          "85%":  { transform: "translateY(0)     scale(1.05) rotate(-4deg)" },
+          "100%": { transform: "translateY(0)     scale(1)    rotate(-3deg)", opacity: "1" },
         },
         "screen-shake": {
           "0%, 100%": { transform: "translate(0, 0)" },
-          "10%": { transform: "translate(-2px, 1px)" },
-          "20%": { transform: "translate(2px, -1px)" },
-          "30%": { transform: "translate(-1px, -1px)" },
-          "40%": { transform: "translate(1px, 1px)" },
-          "50%": { transform: "translate(0, 0)" },
+          "10%":      { transform: "translate(-2px, 1px)" },
+          "20%":      { transform: "translate(2px, -1px)" },
+          "30%":      { transform: "translate(-1px, -1px)" },
+          "40%":      { transform: "translate(1px, 1px)" },
+          "50%":      { transform: "translate(0, 0)" },
         },
         "name-rise": {
-          "0%": {
-            opacity: "0",
-            transform: "translateY(24px)",
-            filter: "blur(8px)",
-          },
-          "100%": {
-            opacity: "1",
-            transform: "translateY(0)",
-            filter: "blur(0)",
-          },
+          "0%":   { opacity: "0", transform: "translateY(24px)", filter: "blur(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)",    filter: "blur(0)" },
         },
+        // Ambient glow — was seal orange; now vermillion.
         "seal-ambient": {
-          "0%, 100%": {
-            filter: "drop-shadow(0 0 24px rgba(255, 92, 26, 0.15))",
-          },
-          "50%": {
-            filter: "drop-shadow(0 0 48px rgba(255, 92, 26, 0.35))",
-          },
+          "0%, 100%": { filter: "drop-shadow(0 0 24px rgba(192, 51, 26, 0.18))" },
+          "50%":      { filter: "drop-shadow(0 0 48px rgba(192, 51, 26, 0.40))" },
+        },
+        // Slow paper-drift for the hero backdrop — 60s cycle, so subtle
+        // you only notice it if you sit on the page for a while.
+        "grain-drift": {
+          "0%":   { transform: "translate(0, 0)" },
+          "25%":  { transform: "translate(-2%, 1%)" },
+          "50%":  { transform: "translate(1%, -2%)" },
+          "75%":  { transform: "translate(-1%, -1%)" },
+          "100%": { transform: "translate(0, 0)" },
         },
       },
       animation: {
-        "stamp-pulse": "stamp-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "scan-sweep": "scan-sweep 2s ease-in-out infinite alternate",
-        "toast-in": "toast-in 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
-        "stamp-drop": "stamp-drop 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
+        "stamp-pulse":  "stamp-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        "scan-sweep":   "scan-sweep 2s ease-in-out infinite alternate",
+        "toast-in":     "toast-in 220ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "stamp-drop":   "stamp-drop 900ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards",
         "screen-shake": "screen-shake 400ms cubic-bezier(0.4, 0, 0.6, 1) 600ms",
-        "name-rise": "name-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "name-rise":    "name-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
         "seal-ambient": "seal-ambient 4s ease-in-out infinite",
+        "grain-drift":  "grain-drift 60s ease-in-out infinite",
       },
     },
   },

@@ -21,9 +21,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <div className="w-full">
       {label && (
-        // Was: tracking-[0.18em] (one of three off-pattern values the audit
-        // called out). Eyebrow is now the single source of truth for this
-        // uppercase-letterspaced-muted-xs pattern.
         <Eyebrow as="label" htmlFor={inputId} className="mb-2 block">
           {label}
         </Eyebrow>
@@ -31,13 +28,15 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
 
       <div
         className={cn(
-          "flex items-center gap-2 rounded-md border bg-stamp-surface2",
-          "transition-colors duration-150 px-3.5 py-2.5",
-          // Focus intensity: /50 (per DESIGN.md "focused, not selected").
-          // Selection state at full orange is reserved for SelectableCard.
+          // Inputs read as *pressed into* the paper — deeper cream fill,
+          // warm inset well shadow. The focus state pulls the ink border
+          // taut without recoloring the fill.
+          "flex items-center gap-2 rounded-md bg-stamp-surface2",
+          "shadow-stamp-well transition-[box-shadow,border-color] duration-150",
+          "border border-transparent px-3.5 py-2.5",
           error
-            ? "border-stamp-red/60 focus-within:border-stamp-red"
-            : "border-stamp-border focus-within:border-stamp-orange/50",
+            ? "!border-stamp-red/60 focus-within:!border-stamp-red"
+            : "focus-within:border-stamp-white/40 focus-within:shadow-[inset_0_1px_2px_rgba(74,68,50,0.14),inset_0_0_0_1px_rgba(20,16,12,0.35)]",
         )}
       >
         {prefix && <span className="text-stamp-muted-2 text-sm shrink-0">{prefix}</span>}
@@ -61,8 +60,6 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
           id={hintId}
           className={cn(
             "mt-1.5 text-xs",
-            // Hints are 14px-tier secondary body text → muted-2 (passes AA).
-            // The old `text-stamp-muted` failed AA at this scale on stamp-black.
             error ? "text-stamp-red" : "text-stamp-muted-2",
           )}
         >
