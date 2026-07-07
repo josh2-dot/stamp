@@ -38,8 +38,6 @@ export default function CategoryManagementPage() {
   const params = useParams<{ id: string; categoryId: string }>();
   const [data, setData] = useState<FeedShape | null>(null);
   const [revealOpen, setRevealOpen] = useState(false);
-  const [addNomineeOpen, setAddNomineeOpen] = useState(false);
-  const { toast } = useToast();
 
   const load = async () => {
     const res = await fetch(
