@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { Badge } from "@/components/ui/Badge";
 import { Input } from "@/components/ui/Input";
+import { useToast } from "@/components/ui/Toast";
 import type { AwardNominee, AwardPhase } from "@/types";
 
 interface NomineeListEditorProps {
@@ -21,6 +22,7 @@ interface NomineeListEditorProps {
 export function NomineeListEditor({ nominees, phase, onChange }: NomineeListEditorProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const sorted = [...nominees].sort((a, b) => a.sort_order - b.sort_order);
 
@@ -34,7 +36,11 @@ export function NomineeListEditor({ nominees, phase, onChange }: NomineeListEdit
     const data = await res.json();
     setBusy(null);
     if (!res.ok) {
-      alert(data.error || "Couldn't save");
+      toast({
+        tone: "error",
+        title: "Couldn't update nominee",
+        body: data.error,
+      });
       return;
     }
     setEditingId(null);

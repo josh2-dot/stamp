@@ -111,18 +111,31 @@ export async function POST(
   if (!body.label?.trim()) {
     return NextResponse.json({ error: "Label is required" }, { status: 400 });
   }
-  const votePriceKobo = body.vote_price_naira
+  // Vote price. Two modes:
+  //   - Paid: any amount ≥ ₦50 (Paystack's practical floor for card
+  //     transactions; below this, transaction fees eat the vote)
+  //   - Free: exactly ₦0 — treated as an unmonetized poll. In this mode
+  //     we default max_votes_per_voter to 1 to prevent one person from
+  //     stuffing the ballot, though the organizer can override.
+  const votePriceKobo = body.vote_price_naira != null
     ? Math.round(body.vote_price_naira * 100)
     : 10000;
-  if (votePriceKobo < 5000) {
-    // Paystack practical floor is around ₦50; ₦50 vote is the lowest we
-    // want to allow without losing money to transaction fees on the
-    // organizer's side.
+  const isFree = votePriceKobo === 0;
+  if (!isFree && votePriceKobo < 5000) {
     return NextResponse.json(
-      { error: "Vote price must be at least ₦50" },
+      { error: "Vote price must be ₦0 (free poll) or at least ₦50" },
       { status: 400 },
     );
   }
+
+  // Free-poll default: 1 vote per phone. Prevents obvious abuse without
+  // taking the choice away from the organizer, who can set a higher cap
+  // (or no cap) explicitly if they want.
+  const maxPerVoter = body.max_votes_per_voter !== undefined
+    ? body.max_votes_per_voter
+    : isFree
+      ? 1
+      : null;
 
   // Determine sort order — append to end by default
   let sortOrder = body.sort_order ?? 0;
@@ -148,7 +161,7 @@ export async function POST(
       voting_open_at: body.voting_open_at ?? null,
       voting_close_at: body.voting_close_at ?? null,
       results_public_during_voting: body.results_public_during_voting ?? false,
-      max_votes_per_voter: body.max_votes_per_voter ?? null,
+      max_votes_per_voter: maxPerVoter,
       sort_order: sortOrder,
     })
     .select("*")

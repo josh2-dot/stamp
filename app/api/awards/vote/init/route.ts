@@ -111,10 +111,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  const isFreeVote = votePriceKobo === 0;
   const amountKobo = votePriceKobo * quantity;
   const ref = `VOTE-${makeReference()}`;
 
-  // Insert pending vote row
+  // Insert vote row. Status differs by mode:
+  //   - paid vote → pending, flipped by webhook after Paystack confirms
+  //   - free vote → paid immediately, no Paystack round-trip needed
   const { data: vote, error: insertErr } = await admin
     .from("award_votes")
     .insert({
@@ -127,17 +130,44 @@ export async function POST(req: NextRequest) {
       quantity,
       paystack_ref: ref,
       amount_paid: amountKobo,
-      status: "pending",
+      status: isFreeVote ? "paid" : "pending",
+      paid_at: isFreeVote ? new Date().toISOString() : null,
     })
     .select("id")
     .single();
 
   if (insertErr || !vote) {
     console.error("[vote/init] insert failed", insertErr);
-    return NextResponse.json({ error: "Couldn't init vote" }, { status: 500 });
+    return NextResponse.json(
+      { error: insertErr?.message || "Couldn't record vote" },
+      { status: 500 },
+    );
   }
 
-  // Paystack init — synthesize an email from the phone if voter didn't supply
+  // Free-vote fast path: no Paystack, no callback URL, just update the
+  // nominee's cached counters and return a confirmation flag so the
+  // client can render the "vote counted" state without a redirect.
+  if (isFreeVote) {
+    // Recount to keep the denormalized counters in sync — same RPC the
+    // webhook calls for paid votes, so both paths converge on identical
+    // state.
+    const { error: recountErr } = await admin.rpc("recount_nominee_votes", {
+      p_nominee_id: nominee.id,
+    });
+    if (recountErr) {
+      console.error("[vote/init] recount failed after free vote", recountErr);
+      // Non-fatal — the counter will drift briefly but the vote is recorded.
+    }
+    return NextResponse.json({
+      free: true,
+      reference: ref,
+      // No authorizationUrl — the client detects `free: true` and shows
+      // an inline success state instead of redirecting.
+    });
+  }
+
+  // Paid path — Paystack init. Synthesize an email from the phone if the
+  // voter didn't supply one.
   const email =
     body.voter_email?.trim() ||
     `${voterPhone.replace(/\D/g, "")}@voters.stamptickets.ng`;

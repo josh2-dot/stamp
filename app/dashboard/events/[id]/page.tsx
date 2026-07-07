@@ -141,12 +141,14 @@ export default function EventDashboardPage() {
         </div>
 
         {!ev.is_active && (
-          // Was: className="border-stamp-gold/40 bg-stamp-gold/5" — one-off
-          // override replaced with tone="warning" Card variant.
-          <Card tone="warning" className="bg-stamp-gold/5">
+          // tone="warning" handles the border. The bg-stamp-gold/5 fill that
+          // used to live here was the second half of a duplicate signal —
+          // border + fill + eyebrow color all said the same thing. Border-
+          // only is enough.
+          <Card tone="warning">
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div>
-                <Eyebrow className="!text-stamp-gold">Event deactivated</Eyebrow>
+                <Eyebrow tone="warning">Event deactivated</Eyebrow>
                 <p className="text-sm mt-1 text-stamp-white">
                   New ticket sales are paused. Existing tickets still scan at the door.
                 </p>

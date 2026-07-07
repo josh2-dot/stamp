@@ -44,9 +44,12 @@ export function PageShell({
     <>
       {nav && <TopNav />}
       <main
+        id="main"
+        // scroll-mt-32 keeps the TopNav from covering content when a
+        // hash link (or skip-to-content) jumps here.
         className={cn(
           widthClass[maxWidth],
-          "mx-auto px-6 pt-32 pb-24",
+          "mx-auto px-6 pt-32 pb-24 scroll-mt-32",
           className,
         )}
       >

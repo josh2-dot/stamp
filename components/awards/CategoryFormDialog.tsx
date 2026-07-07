@@ -29,8 +29,12 @@ export function CategoryFormDialog({
   onSaved,
 }: CategoryFormDialogProps) {
   const [label, setLabel] = useState(existing?.label ?? "");
+  // Free polls store vote_price_kobo = 0. We split the concerns in state
+  // so the user can flip mode without losing their last paid price.
+  const initialIsFree = existing ? existing.vote_price_kobo === 0 : false;
+  const [isFree, setIsFree] = useState(initialIsFree);
   const [voteNaira, setVoteNaira] = useState(
-    String((existing?.vote_price_kobo ?? 10000) / 100),
+    initialIsFree ? "100" : String((existing?.vote_price_kobo ?? 10000) / 100),
   );
   const [resultsPublic, setResultsPublic] = useState(
     existing?.results_public_during_voting ?? false,
@@ -60,21 +64,33 @@ export function CategoryFormDialog({
       setError("Category name is required.");
       return;
     }
-    const price = parseFloat(voteNaira);
-    if (!Number.isFinite(price) || price < 50) {
-      setError("Vote price must be at least ₦50.");
-      return;
+    // Two modes, two validations:
+    //   - Free poll: price is always ₦0, per-voter cap defaults to 1 if blank
+    //   - Paid vote: price must be ≥ ₦50
+    let priceKobo = 0;
+    if (!isFree) {
+      const price = parseFloat(voteNaira);
+      if (!Number.isFinite(price) || price < 50) {
+        setError("Vote price must be at least ₦50.");
+        return;
+      }
+      priceKobo = price;
     }
-    const maxVotes = maxPerVoter ? parseInt(maxPerVoter, 10) : null;
+    let maxVotes: number | null = maxPerVoter ? parseInt(maxPerVoter, 10) : null;
     if (maxPerVoter && (!Number.isFinite(maxVotes!) || maxVotes! < 1)) {
       setError("Vote cap must be a positive number or left blank.");
       return;
+    }
+    // For a new free poll, if the organizer didn't specify a cap we default
+    // to 1. Otherwise the poll can be trivially stuffed by one person.
+    if (isFree && !isEdit && maxVotes === null) {
+      maxVotes = 1;
     }
 
     setSaving(true);
     const payload = {
       label: label.trim(),
-      vote_price_naira: price,
+      vote_price_naira: isFree ? 0 : priceKobo,
       results_public_during_voting: resultsPublic,
       max_votes_per_voter: maxVotes,
     };
@@ -132,29 +148,84 @@ export function CategoryFormDialog({
             hint={isLocked ? "Locked once nominations open." : undefined}
           />
 
-          <Input
-            label="Vote price"
-            type="number"
-            inputMode="decimal"
-            value={voteNaira}
-            onChange={(e) => setVoteNaira(e.target.value)}
-            prefix="₦"
-            disabled={isLocked}
-            hint={
-              isLocked
-                ? "Locked once nominations open."
-                : "Per vote. Whales buy in bulk, so this matters less than people expect."
-            }
-          />
+          {/* Voting type — two-option segmented control. Determines whether
+              vote_price_kobo will be zero or a paid amount. */}
+          <div>
+            <label className="block text-xs uppercase tracking-[0.2em] text-stamp-muted mb-2 font-medium">
+              Voting type
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                disabled={isLocked}
+                onClick={() => setIsFree(false)}
+                className={
+                  !isFree
+                    ? "p-3 rounded-md bg-stamp-orange/15 text-stamp-orange border border-stamp-orange text-left"
+                    : "p-3 rounded-md text-stamp-muted-2 border border-stamp-border hover:text-stamp-white hover:border-stamp-muted-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                }
+              >
+                <p className="text-sm font-medium">Paid votes</p>
+                <p className="text-xs opacity-80 mt-0.5">
+                  Voters pay per vote. Money goes to you.
+                </p>
+              </button>
+              <button
+                type="button"
+                disabled={isLocked}
+                onClick={() => setIsFree(true)}
+                className={
+                  isFree
+                    ? "p-3 rounded-md bg-stamp-orange/15 text-stamp-orange border border-stamp-orange text-left"
+                    : "p-3 rounded-md text-stamp-muted-2 border border-stamp-border hover:text-stamp-white hover:border-stamp-muted-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                }
+              >
+                <p className="text-sm font-medium">Free poll</p>
+                <p className="text-xs opacity-80 mt-0.5">
+                  One vote per phone. Nobody pays.
+                </p>
+              </button>
+            </div>
+            {isLocked && (
+              <p className="text-xs text-stamp-muted-2 mt-2">
+                Voting type is locked once nominations open.
+              </p>
+            )}
+          </div>
+
+          {!isFree && (
+            <Input
+              label="Vote price"
+              type="number"
+              inputMode="decimal"
+              value={voteNaira}
+              onChange={(e) => setVoteNaira(e.target.value)}
+              prefix="₦"
+              disabled={isLocked}
+              hint={
+                isLocked
+                  ? "Locked once nominations open."
+                  : "Per vote. Whales buy in bulk, so this matters less than people expect."
+              }
+            />
+          )}
 
           <Input
-            label="Cap votes per phone number (optional)"
+            label={
+              isFree
+                ? "Cap votes per phone number"
+                : "Cap votes per phone number (optional)"
+            }
             type="number"
             inputMode="numeric"
-            placeholder="No limit"
+            placeholder={isFree ? "1" : "No limit"}
             value={maxPerVoter}
             onChange={(e) => setMaxPerVoter(e.target.value)}
-            hint="Leave blank to let voters buy as many as they want. Caps reduce vote revenue."
+            hint={
+              isFree
+                ? "Free polls need a cap or one person can stuff the ballot. Defaults to 1."
+                : "Leave blank to let voters buy as many as they want. Caps reduce vote revenue."
+            }
           />
 
           <label className="flex items-center gap-3 p-3 rounded-md bg-stamp-surface2 border border-stamp-border cursor-pointer">
@@ -169,7 +240,9 @@ export function CategoryFormDialog({
                 Show live results during voting
               </p>
               <p className="text-xs text-stamp-muted-2">
-                Off keeps everyone guessing until you reveal. Recommended for award nights.
+                {isFree
+                  ? "Recommended for polls — voters like seeing where they stand."
+                  : "Off keeps everyone guessing until you reveal. Recommended for award nights."}
               </p>
             </div>
           </label>

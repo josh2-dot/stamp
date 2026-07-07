@@ -216,10 +216,21 @@ function CategorySection({
         </div>
         {isVoting && (
           <div className="text-right">
-            <p className="text-xs text-stamp-muted-2">Per vote</p>
-            <p className="font-display text-display-xs text-stamp-orange">
-              {formatNaira(category.vote_price_kobo)}
-            </p>
+            {category.vote_price_kobo === 0 ? (
+              <>
+                <p className="text-xs text-stamp-muted-2">Voting is</p>
+                <p className="font-display text-display-xs text-stamp-orange">
+                  Free
+                </p>
+              </>
+            ) : (
+              <>
+                <p className="text-xs text-stamp-muted-2">Per vote</p>
+                <p className="font-display text-display-xs text-stamp-orange">
+                  {formatNaira(category.vote_price_kobo)}
+                </p>
+              </>
+            )}
           </div>
         )}
       </div>

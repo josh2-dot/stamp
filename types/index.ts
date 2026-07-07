@@ -320,7 +320,18 @@ export interface InitAwardVoteRequest {
   quantity: number;
 }
 
-export interface InitAwardVoteResponse {
-  authorizationUrl: string;
-  reference: string;
-}
+/**
+ * Response from POST /api/awards/vote/init. Discriminated on `free`:
+ *   - Paid vote: caller redirects the browser to `authorizationUrl`
+ *   - Free vote: caller shows an inline success state (no redirect)
+ */
+export type InitAwardVoteResponse =
+  | {
+      free?: false;
+      authorizationUrl: string;
+      reference: string;
+    }
+  | {
+      free: true;
+      reference: string;
+    };

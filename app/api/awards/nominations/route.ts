@@ -98,8 +98,21 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // Insert. Use upsert-on-conflict-do-nothing so dupe nominations from the
-  // same nominator don't error out — they silently succeed.
+  // Insert one row at a time so each row's success/failure is independent.
+  //
+  // Why not upsert? The dedupe index in migration 012 is an *expression*
+  // index — unique on (category_id, nominator_phone, lower(trim(nominee_name))).
+  // Postgres ON CONFLICT requires the conflict spec to match an actual unique
+  // constraint exactly; expression indexes can't be referenced by column name.
+  // Supabase's upsert with onConflict: "category_id,nominator_phone,nominee_name"
+  // therefore returns "42P10: there is no unique or exclusion constraint
+  // matching the ON CONFLICT specification".
+  //
+  // Per-row insert sidesteps that: we let the unique index do its job at the
+  // DB layer, catch error code 23505 (unique_violation) as a duplicate, and
+  // treat it as soft-success — the nominator's intent was captured the first
+  // time they submitted. Other errors fail loudly with the real Postgres
+  // message so they're diagnosable in production.
   const rows = entries.map((e) => ({
     category_id: e.category_id,
     event_id: body.event_id,
@@ -108,22 +121,53 @@ export async function POST(req: NextRequest) {
     status: "pending" as const,
   }));
 
-  const { error: insertErr, count } = await admin
-    .from("award_nominations")
-    .upsert(rows, {
-      onConflict: "category_id,nominator_phone,nominee_name",
-      ignoreDuplicates: true,
-      count: "exact",
-    });
+  let inserted = 0;
+  let duplicates = 0;
 
-  if (insertErr) {
-    console.error("[nominations] insert failed", insertErr);
-    return NextResponse.json({ error: "Couldn't submit" }, { status: 500 });
+  for (const row of rows) {
+    const { error: rowErr } = await admin
+      .from("award_nominations")
+      .insert(row);
+
+    if (!rowErr) {
+      inserted += 1;
+      continue;
+    }
+
+    // 23505 = unique_violation. The unique index on
+    // (category_id, nominator_phone, lower(trim(nominee_name))) caught a
+    // dupe — same nominator, same name (case-insensitive), same category.
+    // Soft-success: don't surface this as an error to the public form.
+    if (rowErr.code === "23505") {
+      duplicates += 1;
+      continue;
+    }
+
+    // Any other error is real. Log with full detail server-side, and send
+    // the Postgres message back to the client so the organizer (or me)
+    // can actually debug it instead of staring at "Couldn't submit".
+    console.error("[nominations] insert failed", {
+      code: rowErr.code,
+      message: rowErr.message,
+      details: rowErr.details,
+      hint: rowErr.hint,
+      row,
+    });
+    return NextResponse.json(
+      {
+        error:
+          rowErr.message ||
+          "Couldn't submit. The database rejected the nomination.",
+        code: rowErr.code,
+      },
+      { status: 500 },
+    );
   }
 
   return NextResponse.json({
     ok: true,
     received: entries.length,
-    new: count ?? entries.length,
+    new: inserted,
+    duplicates,
   });
 }

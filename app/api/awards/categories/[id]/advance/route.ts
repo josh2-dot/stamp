@@ -2,27 +2,51 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { createAdminSupabase } from "@/lib/supabase/admin";
 import { nextPhase, type AwardPhase } from "@/lib/awards";
-import { notifyOrganizer } from "@/lib/termii";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+interface AdvanceBody {
+  /**
+   * Optional target phase. If omitted, we advance one step via nextPhase().
+   * Passing a target explicitly enables organizer shortcuts:
+   *   - draft → voting_open        (skip public nominations entirely)
+   *   - nominations_open → voting_open  (close nominations + skip moderation)
+   *   - moderation → voting_open   (same as default, still requires ≥2 nominees)
+   * All shortcuts still require ≥2 non-excluded nominees on the ballot.
+   * Only forward transitions are allowed; the target must sit later in the
+   * phase order than the current phase.
+   */
+  target_phase?: AwardPhase;
+}
+
+const PHASE_ORDER: AwardPhase[] = [
+  "draft",
+  "nominations_open",
+  "moderation",
+  "voting_open",
+  "voting_closed",
+  "revealed",
+];
+
 /**
- * Advance a category to its next phase. Idempotent at the *target* — if
- * the category is already in the target phase, we return ok. Otherwise
- * the transition must be exactly one step forward.
+ * Advance a category forward through its lifecycle.
  *
- * Special phase rules:
- *  - draft → nominations_open: no prerequisites
- *  - nominations_open → moderation: no prerequisites (closes the public form)
- *  - moderation → voting_open: requires at least 2 promoted, non-excluded nominees
- *  - voting_open → voting_closed: no prerequisites
- *  - voting_closed → revealed: requires the organizer to also pick a winner
- *    (handled by a separate /reveal route — this advance only allows the
- *    transition if winner_id has been set)
+ * Default (no body / no target_phase): advance one step via nextPhase().
+ * With target_phase: jump directly to a later phase, subject to the
+ * prerequisites for that phase (mainly ≥2 nominees for voting_open).
+ *
+ * This enables the "organizer skips public nominations" flow — they add
+ * nominees directly via POST /api/awards/categories/[id]/nominees, then
+ * jump straight from draft to voting_open.
+ *
+ * Phase-specific rules:
+ *  - voting_open: requires ≥2 promoted, non-excluded nominees
+ *  - revealed:    blocked here — must come through the /reveal endpoint
+ *    (which also picks a winner and fires the notification)
  */
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } },
 ) {
   const sb = createServerSupabase();
@@ -31,6 +55,15 @@ export async function POST(
   } = await sb.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
+  }
+
+  // Body is optional — a bare POST advances one step, same as before
+  let body: AdvanceBody = {};
+  try {
+    const raw = await req.text();
+    if (raw) body = JSON.parse(raw);
+  } catch {
+    // No body / malformed — treat as bare advance
   }
 
   const admin = createAdminSupabase();
@@ -57,7 +90,9 @@ export async function POST(
   }
 
   const currentPhase = category.phase as AwardPhase;
-  const target = nextPhase(currentPhase);
+  const requested = body.target_phase;
+  const target: AwardPhase | null = requested ?? nextPhase(currentPhase);
+
   if (!target) {
     return NextResponse.json(
       { error: "Category is already in its final phase." },
@@ -65,7 +100,23 @@ export async function POST(
     );
   }
 
-  // Prerequisite: opening voting needs at least 2 nominees on the ballot
+  // Forward-only guard — target must sit later in the ordered lifecycle
+  // than the current phase. Rewinding a phase would let an organizer
+  // reopen nominations after moderation, which would break invariants
+  // (raw nominations they'd rejected could come back in).
+  const curIdx = PHASE_ORDER.indexOf(currentPhase);
+  const tgtIdx = PHASE_ORDER.indexOf(target);
+  if (tgtIdx <= curIdx) {
+    return NextResponse.json(
+      { error: "Phases only move forward." },
+      { status: 409 },
+    );
+  }
+
+  // Prerequisite: opening voting needs at least 2 nominees on the ballot.
+  // Wording adapted based on how the organizer got here — if they came
+  // through moderation, mention the nominations panel; otherwise mention
+  // adding directly.
   if (target === "voting_open") {
     const { count } = await admin
       .from("award_nominees")
@@ -73,10 +124,12 @@ export async function POST(
       .eq("category_id", params.id)
       .eq("is_excluded", false);
     if ((count ?? 0) < 2) {
+      const wentThroughModeration = currentPhase === "moderation";
       return NextResponse.json(
         {
-          error:
-            "Need at least 2 promoted nominees before voting can open. Add more from the nominations panel.",
+          error: wentThroughModeration
+            ? "Need at least 2 promoted nominees before voting can open. Add more from the nominations panel."
+            : "Need at least 2 nominees on the ballot before voting can open. Add nominees first.",
         },
         { status: 409 },
       );
@@ -95,12 +148,23 @@ export async function POST(
   }
 
   const update: Record<string, unknown> = { phase: target };
-  // Stamp the corresponding timestamp so the organizer's UI can show
-  // "nominations have been open for X hours"
-  if (target === "nominations_open") update.nominations_open_at = new Date().toISOString();
-  if (target === "moderation") update.nominations_close_at = new Date().toISOString();
-  if (target === "voting_open") update.voting_open_at = new Date().toISOString();
-  if (target === "voting_closed") update.voting_close_at = new Date().toISOString();
+  const nowIso = new Date().toISOString();
+
+  // Stamp timestamps for every phase we pass through. If the organizer
+  // skipped moderation, we still stamp nominations_close_at so the audit
+  // trail shows when the door effectively closed for public input.
+  if (tgtIdx >= PHASE_ORDER.indexOf("nominations_open") && !category.nominations_open_at) {
+    update.nominations_open_at = nowIso;
+  }
+  if (tgtIdx >= PHASE_ORDER.indexOf("moderation") && !category.nominations_close_at) {
+    update.nominations_close_at = nowIso;
+  }
+  if (tgtIdx >= PHASE_ORDER.indexOf("voting_open") && !category.voting_open_at) {
+    update.voting_open_at = nowIso;
+  }
+  if (tgtIdx >= PHASE_ORDER.indexOf("voting_closed") && !category.voting_close_at) {
+    update.voting_close_at = nowIso;
+  }
 
   const { error: updErr } = await admin
     .from("award_categories")
@@ -109,8 +173,11 @@ export async function POST(
 
   if (updErr) {
     console.error("[awards advance] update failed", updErr);
-    return NextResponse.json({ error: "Couldn't advance" }, { status: 500 });
+    return NextResponse.json(
+      { error: updErr.message || "Couldn't advance" },
+      { status: 500 },
+    );
   }
 
-  return NextResponse.json({ ok: true, phase: target });
+  return NextResponse.json({ ok: true, phase: target, skipped: tgtIdx - curIdx > 1 });
 }

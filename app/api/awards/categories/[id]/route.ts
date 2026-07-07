@@ -82,7 +82,16 @@ export async function PATCH(
   const update: Record<string, unknown> = {};
   if (body.label !== undefined) update.label = body.label.trim();
   if (body.vote_price_naira !== undefined) {
-    update.vote_price_kobo = Math.round(body.vote_price_naira * 100);
+    const newKobo = Math.round(body.vote_price_naira * 100);
+    // Same rule as create: 0 (free) or ≥ ₦50. Nothing in between makes
+    // economic sense — sub-₦50 votes lose to Paystack transaction fees.
+    if (newKobo !== 0 && newKobo < 5000) {
+      return NextResponse.json(
+        { error: "Vote price must be ₦0 (free poll) or at least ₦50" },
+        { status: 400 },
+      );
+    }
+    update.vote_price_kobo = newKobo;
   }
   if (body.nominations_open_at !== undefined) {
     update.nominations_open_at = body.nominations_open_at;

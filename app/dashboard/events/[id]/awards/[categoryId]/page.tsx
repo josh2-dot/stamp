@@ -9,12 +9,14 @@ import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Badge } from "@/components/ui/Badge";
 import { CopyButton } from "@/components/ui/CopyButton";
+import { useToast } from "@/components/ui/Toast";
 import { formatNaira } from "@/lib/format";
 import { PhaseChip } from "@/components/awards/PhaseChip";
 import { NominationsModerationPanel } from "@/components/awards/NominationsModerationPanel";
 import { NomineeListEditor } from "@/components/awards/NomineeListEditor";
 import { LiveLeaderboard } from "@/components/awards/LiveLeaderboard";
 import { RevealDialog } from "@/components/awards/RevealDialog";
+import { AddNomineeDialog } from "@/components/awards/AddNomineeDialog";
 import type { AwardCategory, AwardNominee } from "@/types";
 
 interface RawGroup {
@@ -36,6 +38,8 @@ export default function CategoryManagementPage() {
   const params = useParams<{ id: string; categoryId: string }>();
   const [data, setData] = useState<FeedShape | null>(null);
   const [revealOpen, setRevealOpen] = useState(false);
+  const [addNomineeOpen, setAddNomineeOpen] = useState(false);
+  const { toast } = useToast();
 
   const load = async () => {
     const res = await fetch(
@@ -50,14 +54,22 @@ export default function CategoryManagementPage() {
     load();
   }, [params.categoryId]);
 
-  const advance = async () => {
+  const advance = async (targetPhase?: string) => {
     const res = await fetch(
       `/api/awards/categories/${params.categoryId}/advance`,
-      { method: "POST" },
+      {
+        method: "POST",
+        headers: targetPhase ? { "Content-Type": "application/json" } : {},
+        body: targetPhase ? JSON.stringify({ target_phase: targetPhase }) : undefined,
+      },
     );
     const json = await res.json();
     if (!res.ok) {
-      alert(json.error || "Couldn't advance");
+      toast({
+        tone: "error",
+        title: "Couldn't advance phase",
+        body: json.error,
+      });
       return;
     }
     load();
@@ -101,22 +113,51 @@ export default function CategoryManagementPage() {
             </h1>
             <div className="flex items-center gap-3 mt-3 text-xs text-stamp-muted-2 flex-wrap">
               <PhaseChip phase={phase} />
-              <span>{formatNaira(category.vote_price_kobo)}/vote</span>
+              <span>
+                {category.vote_price_kobo === 0
+                  ? "Free poll"
+                  : `${formatNaira(category.vote_price_kobo)}/vote`}
+              </span>
               {category.max_votes_per_voter && (
                 <span>Cap: {category.max_votes_per_voter}/voter</span>
               )}
             </div>
           </div>
 
-          {/* Phase advance action — the one big move the organizer's here for */}
-          <PhaseAdvanceCTA
-            phase={phase}
-            onAdvance={advance}
-            onReveal={() => setRevealOpen(true)}
-            canAdvance={
-              phase === "moderation" ? eligibleNominees.length >= 2 : true
-            }
-          />
+          {/* Phase advance action — the one big move the organizer's here for.
+              For phases where the ballot is still mutable, a secondary "Add
+              nominee" button lets the organizer bypass public nominations. */}
+          <div className="flex items-center gap-2 flex-wrap justify-end">
+            {["draft", "nominations_open", "moderation"].includes(phase) && (
+              <Button
+                variant="ghost"
+                size="lg"
+                onClick={() => setAddNomineeOpen(true)}
+              >
+                + Add nominee
+              </Button>
+            )}
+            <PhaseAdvanceCTA
+              phase={phase}
+              onAdvance={advance}
+              onReveal={() => setRevealOpen(true)}
+              canAdvance={
+                // For voting_open transitions from any phase, gate on ≥2 nominees.
+                // Other transitions have no numeric prereq.
+                (phase === "moderation" ||
+                  (phase === "draft" && eligibleNominees.length >= 2) ||
+                  (phase === "nominations_open" && eligibleNominees.length >= 2))
+                  ? eligibleNominees.length >= 2
+                  : true
+              }
+              // In draft or nominations_open, if ≥2 nominees already exist,
+              // the organizer can skip straight to voting.
+              canSkipToVoting={
+                (phase === "draft" || phase === "nominations_open") &&
+                eligibleNominees.length >= 2
+              }
+            />
+          </div>
         </div>
       </div>
 
@@ -129,8 +170,22 @@ export default function CategoryManagementPage() {
         totalRevenue={totalRevenue}
         eventId={params.id}
         categoryId={params.categoryId}
+        onAddNominee={() => setAddNomineeOpen(true)}
         onChange={load}
       />
+
+      {addNomineeOpen && (
+        <AddNomineeDialog
+          categoryId={params.categoryId}
+          categoryLabel={category.label}
+          onClose={() => setAddNomineeOpen(false)}
+          onAdded={() => {
+            setAddNomineeOpen(false);
+            load();
+            toast({ tone: "success", title: "Nominee added to ballot" });
+          }}
+        />
+      )}
 
       {revealOpen && (
         <RevealDialog
@@ -152,11 +207,17 @@ function PhaseAdvanceCTA({
   onAdvance,
   onReveal,
   canAdvance,
+  canSkipToVoting,
 }: {
   phase: AwardCategory["phase"];
-  onAdvance: () => void;
+  /** Bare call = advance one step. Pass a target phase to jump further. */
+  onAdvance: (targetPhase?: string) => void;
   onReveal: () => void;
   canAdvance: boolean;
+  /** When true, we surface a secondary "Skip to voting" affordance —
+   *  organizer has already added ≥2 nominees directly and doesn't want
+   *  to bother with public nominations / moderation. */
+  canSkipToVoting: boolean;
 }) {
   if (phase === "revealed") {
     return (
@@ -169,13 +230,13 @@ function PhaseAdvanceCTA({
   const cta: { label: string; action: () => void } | null = (() => {
     switch (phase) {
       case "draft":
-        return { label: "Open nominations →", action: onAdvance };
+        return { label: "Open nominations →", action: () => onAdvance() };
       case "nominations_open":
-        return { label: "Close nominations →", action: onAdvance };
+        return { label: "Close nominations →", action: () => onAdvance() };
       case "moderation":
-        return { label: "Open voting →", action: onAdvance };
+        return { label: "Open voting →", action: () => onAdvance() };
       case "voting_open":
-        return { label: "Close voting →", action: onAdvance };
+        return { label: "Close voting →", action: () => onAdvance() };
       case "voting_closed":
         return { label: "Reveal winner →", action: onReveal };
       default:
@@ -185,9 +246,20 @@ function PhaseAdvanceCTA({
   if (!cta) return null;
 
   return (
-    <Button glow size="lg" onClick={cta.action} disabled={!canAdvance}>
-      {cta.label}
-    </Button>
+    <>
+      {canSkipToVoting && (
+        <Button
+          variant="secondary"
+          size="lg"
+          onClick={() => onAdvance("voting_open")}
+        >
+          Skip to voting →
+        </Button>
+      )}
+      <Button glow size="lg" onClick={cta.action} disabled={!canAdvance}>
+        {cta.label}
+      </Button>
+    </>
   );
 }
 
@@ -208,22 +280,59 @@ function PhaseBody({
   totalRevenue: number;
   eventId: string;
   categoryId: string;
+  onAddNominee: () => void;
   onChange: () => void;
 }) {
   // What's the most useful thing for the organizer to see RIGHT NOW given
   // the current phase? Each phase has a different body composition.
 
+  const eligibleNominees = nominees.filter((n) => !n.is_excluded);
+
   if (phase === "draft") {
     return (
-      <Card accent>
-        <Eyebrow>Ready to open</Eyebrow>
-        <h3 className="font-display text-display-xs text-stamp-white mt-2">
-          Click "Open nominations" above to start collecting.
-        </h3>
-        <p className="text-sm text-stamp-muted-2 mt-2">
-          You can still edit the category name and vote price until nominations open. After that, structural changes are locked.
-        </p>
-      </Card>
+      <div className="space-y-6">
+        {eligibleNominees.length > 0 ? (
+          // Organizer has added nominees directly. Show them the ballot
+          // preview + inline nominee editor so they can iterate before
+          // opening voting.
+          <>
+            <Card accent>
+              <div className="flex items-baseline justify-between gap-4 flex-wrap">
+                <div>
+                  <Eyebrow tone="success">Ballot forming</Eyebrow>
+                  <h3 className="font-display text-display-xs text-stamp-white mt-2">
+                    {eligibleNominees.length} nominee
+                    {eligibleNominees.length === 1 ? "" : "s"} added.
+                  </h3>
+                  <p className="text-sm text-stamp-muted-2 mt-2">
+                    {eligibleNominees.length >= 2
+                      ? "You can skip nominations and go straight to voting from the button above."
+                      : "Add one more to be able to open voting."}
+                  </p>
+                </div>
+              </div>
+            </Card>
+            <Card>
+              <Eyebrow>On ballot</Eyebrow>
+              <NomineeListEditor
+                nominees={nominees}
+                onChange={onChange}
+                phase={phase}
+              />
+            </Card>
+          </>
+        ) : (
+          <Card accent>
+            <Eyebrow>Two ways to fill the ballot</Eyebrow>
+            <h3 className="font-display text-display-xs text-stamp-white mt-2">
+              Open public nominations, or add nominees yourself.
+            </h3>
+            <p className="text-sm text-stamp-muted-2 mt-2">
+              Public nominations let anyone with the link nominate — you moderate the list afterward. Or add nominees directly from the "+ Add nominee" button above and skip straight to voting.
+            </p>
+          </Card>
+        )}
+      </div>
     );
   }
 
@@ -242,6 +351,14 @@ function PhaseBody({
                 {groupedPending.length} unique name{groupedPending.length === 1 ? "" : "s"}
               </p>
             </div>
+            {eligibleNominees.length > 0 && (
+              <div className="text-right">
+                <Eyebrow>You've added</Eyebrow>
+                <p className="font-display text-display-md text-stamp-orange mt-2 tabular-nums">
+                  {eligibleNominees.length}
+                </p>
+              </div>
+            )}
           </div>
           {groupedPending.length > 0 && (
             <div className="mt-6 pt-6 border-t border-stamp-border space-y-2">
@@ -262,8 +379,18 @@ function PhaseBody({
             </div>
           )}
         </Card>
+        {eligibleNominees.length > 0 && (
+          <Card>
+            <Eyebrow>Your ballot (added directly)</Eyebrow>
+            <NomineeListEditor
+              nominees={nominees}
+              onChange={onChange}
+              phase={phase}
+            />
+          </Card>
+        )}
         <p className="text-xs text-stamp-muted-2 text-center">
-          You'll moderate the full list after closing nominations.
+          You'll moderate the public list after closing nominations. Or skip straight to voting if your ballot is ready.
         </p>
       </div>
     );
