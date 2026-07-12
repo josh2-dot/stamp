@@ -118,7 +118,7 @@ Switch to live keys (`sk_live_...`) only when you've completed end-to-end testin
 ### 3.2 Configure the webhook
 
 1. Same page (**API Keys & Webhooks**), find **Webhook URL**.
-2. Set it to `https://stamptickets.ng/api/webhook/paystack` (or your real domain).
+2. Set it to `https://stamp-eight.vercel.app/api/webhook/paystack` (or your real domain).
 3. Save.
 
 > You can come back and update this URL once you've deployed to Vercel. For now, the placeholder is fine if you're using your real domain.
