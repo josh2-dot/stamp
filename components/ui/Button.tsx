@@ -61,13 +61,14 @@ const variants: Record<Variant, string> = {
     "focus-visible:ring-stamp-red",
 };
 
-// Sizes — bumped padding on lg slightly; Fraunces buttons need a touch
-// more breathing room than Syne to feel deliberate rather than cramped.
+// Sizes — mobile-first tap targets. Every size ≥44px vertical on mobile;
+// density tightens on ≥sm where pointer precision doesn't miss.
 const sizes: Record<Size, string> = {
-  sm: "px-3.5 py-1.5 text-sm",
-  md: "px-5 py-2.5 text-sm",
-  lg: "px-7 py-3.5 text-base",
+  sm: "px-3.5 py-2.5 sm:py-1.5 text-sm min-h-[44px] sm:min-h-0",
+  md: "px-5 py-3 sm:py-2.5 text-sm min-h-[48px] sm:min-h-0",
+  lg: "px-7 py-3.5 text-base min-h-[52px] sm:min-h-0",
 };
+
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(function Button(
   {

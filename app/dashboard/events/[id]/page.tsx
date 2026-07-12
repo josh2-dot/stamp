@@ -171,8 +171,8 @@ export default function EventDashboardPage() {
             {/* Share link */}
             <Card>
               <Eyebrow>Event link</Eyebrow>
-              <div className="mt-3 flex items-center gap-2">
-                <code className="flex-1 text-sm text-stamp-orange truncate p-3 bg-stamp-surface2 rounded-md border border-stamp-border">
+              <div className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <code className="flex-1 text-sm text-stamp-orange truncate p-3 bg-stamp-surface2 rounded-md border border-stamp-border min-w-0">
                   {process.env.NEXT_PUBLIC_APP_URL}/{ev.slug}
                 </code>
                 <CopyButton text={`${process.env.NEXT_PUBLIC_APP_URL}/${ev.slug}`} />
@@ -186,8 +186,8 @@ export default function EventDashboardPage() {
                 Send this to whoever's checking tickets at the door. The link
                 includes an access token — don't share it publicly.
               </p>
-              <div className="mt-3 flex items-center gap-2">
-                <code className="flex-1 text-sm text-stamp-orange truncate p-3 bg-stamp-surface2 rounded-md border border-stamp-border">
+              <div className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                <code className="flex-1 text-sm text-stamp-orange truncate p-3 bg-stamp-surface2 rounded-md border border-stamp-border min-w-0">
                   {process.env.NEXT_PUBLIC_APP_URL}/scan/{ev.id}?token={ev.scanner_secret.slice(0, 8)}…
                 </code>
                 <CopyButton

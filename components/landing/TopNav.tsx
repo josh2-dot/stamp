@@ -11,23 +11,24 @@ import { Button } from "@/components/ui/Button";
  */
 export function TopNav() {
   return (
-    <header className="sticky top-0 z-40 bg-stamp-black/85 backdrop-blur-md">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="flex items-center justify-between py-4 border-b border-stamp-border/60">
-          <Link href="/" className="flex items-center gap-2.5 group">
-            {/* Seal is small — logomark scale per DESIGN.md. Hover
-                rotates it slightly, echoing the "hand-stamped" feel. */}
+    <header className="sticky top-0 z-40 bg-stamp-black/85 backdrop-blur-md pt-safe">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="flex items-center justify-between py-3 sm:py-4 border-b border-stamp-border/60">
+          <Link
+            href="/"
+            className="flex items-center gap-2 sm:gap-2.5 group -my-1 py-1 min-h-[44px]"
+          >
             <StampSeal
               size={32}
-              className="transition-transform duration-300 group-hover:-rotate-12"
+              className="transition-transform duration-300 group-hover:-rotate-12 shrink-0"
             />
-            {/* Wordmark in Fraunces — the display serif carries the
-                brand at every scale. Micro-mono for the register. */}
+            {/* "Tickets" register hides below xs so the CTA + wordmark
+                don't overflow at 320px screens. */}
             <span className="flex items-baseline gap-1.5">
-              <span className="font-display text-[19px] font-semibold tracking-[-0.02em] text-stamp-white">
+              <span className="font-display text-[18px] sm:text-[19px] font-semibold tracking-[-0.02em] text-stamp-white">
                 Stamp
               </span>
-              <span className="text-[10px] uppercase tracking-[0.2em] text-stamp-muted font-medium">
+              <span className="hidden xs:inline text-[10px] uppercase tracking-[0.2em] text-stamp-muted font-medium">
                 Tickets
               </span>
             </span>
@@ -36,25 +37,26 @@ export function TopNav() {
           <nav className="flex items-center gap-1">
             <Link
               href="#how"
-              className="hidden sm:inline-block text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors px-3 py-2"
+              className="hidden sm:inline-flex items-center text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors px-3 py-2 min-h-[44px]"
             >
               How it works
             </Link>
             <Link
               href="#pricing"
-              className="hidden sm:inline-block text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors px-3 py-2"
+              className="hidden sm:inline-flex items-center text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors px-3 py-2 min-h-[44px]"
             >
               Pricing
             </Link>
             <Link
               href="#trust"
-              className="hidden md:inline-block text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors px-3 py-2"
+              className="hidden md:inline-flex items-center text-sm text-stamp-muted-2 hover:text-stamp-white transition-colors px-3 py-2 min-h-[44px]"
             >
               Trust
             </Link>
-            <Link href="/login" className="ml-2">
+            <Link href="/login" className="ml-1 sm:ml-2">
               <Button variant="secondary" size="sm">
-                Organizer sign in
+                <span className="hidden sm:inline">Organizer sign in</span>
+                <span className="sm:hidden">Sign in</span>
               </Button>
             </Link>
           </nav>

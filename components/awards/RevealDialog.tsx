@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/Card";
+import { useState } from "react";
+import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -49,13 +49,7 @@ export function RevealDialog({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  // Escape + backdrop dismiss handled by Sheet.
 
   const winner = nominees.find((n) => n.id === winnerId);
 
@@ -89,27 +83,42 @@ export function RevealDialog({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <Sheet
+      open
+      onClose={onClose}
+      maxWidth="lg"
+      dismissible={!busy}
+      ariaLabel={`Reveal ${category.label} winner`}
     >
-      <div className="w-full max-w-lg">
-        <Card className="space-y-5">
-          <div>
+      <div className="sticky top-0 bg-stamp-surface z-10 px-5 sm:px-6 pt-4 pb-3 border-b border-stamp-border">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <Eyebrow>Reveal winner</Eyebrow>
-            <h2 className="font-display text-display-sm text-stamp-white mt-2 text-balance">
+            <h2 className="font-display text-display-sm text-stamp-white mt-1.5 text-balance">
               {category.label}
             </h2>
-            <p className="text-xs text-stamp-muted-2 mt-2">
-              Locks the result, sends the optional winner notification, and switches the projector screen to the reveal animation.
-            </p>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            disabled={busy}
+            className="shrink-0 -mr-2 -mt-1 w-10 h-10 rounded-md flex items-center justify-center text-stamp-muted-2 hover:text-stamp-white hover:bg-stamp-surface2 transition-colors disabled:opacity-50"
+          >
+            <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4" aria-hidden="true">
+              <path d="M4 4 L12 12 M12 4 L4 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+        <p className="text-xs text-stamp-muted-2 mt-2 text-pretty">
+          Locks the result, sends the optional winner notification, and switches the projector screen to the reveal animation.
+        </p>
+      </div>
 
+      <div className="px-5 sm:px-6 py-5 space-y-5">
           <div>
             <Eyebrow>Winner</Eyebrow>
-            <div className="mt-2 space-y-1 max-h-56 overflow-y-auto pr-1">
+            <div className="mt-2 space-y-1.5">
               {sorted.map((n, idx) => {
                 const votes = Number(n.votes_count);
                 const isSelected = winnerId === n.id;
@@ -118,7 +127,7 @@ export function RevealDialog({
                     key={n.id}
                     type="button"
                     onClick={() => setWinnerId(n.id)}
-                    className={`w-full text-left p-3 rounded-md border transition-colors ${
+                    className={`w-full text-left p-3 rounded-md border transition-colors min-h-[56px] ${
                       isSelected
                         ? "bg-stamp-gold/10 border-stamp-gold/40"
                         : "bg-stamp-surface2 border-stamp-border hover:border-stamp-muted-2"
@@ -191,21 +200,20 @@ export function RevealDialog({
           )}
 
           {error && (
-            <div className="p-3 rounded-md bg-stamp-red/10 border border-stamp-red/30 text-stamp-red text-sm">
+            <div className="p-3 rounded-md bg-stamp-red/10 border border-stamp-red/30 text-stamp-red text-sm" role="alert">
               {error}
             </div>
           )}
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-stamp-border">
-            <Button variant="ghost" onClick={onClose} disabled={busy}>
-              Cancel
-            </Button>
-            <Button glow size="lg" onClick={handleReveal} loading={busy}>
-              Reveal {winner?.display_name ?? "winner"} →
-            </Button>
-          </div>
-        </Card>
       </div>
-    </div>
+
+      <div className="sticky bottom-0 bg-stamp-surface border-t border-stamp-border px-5 sm:px-6 pt-4 pb-safe-plus-4 sm:pb-4 flex flex-col sm:flex-row-reverse gap-2 sm:gap-3 sm:justify-start">
+        <Button glow size="lg" fullWidth onClick={handleReveal} loading={busy} className="sm:w-auto">
+          Reveal {winner?.display_name ?? "winner"} →
+        </Button>
+        <Button variant="ghost" size="lg" fullWidth onClick={onClose} disabled={busy} className="sm:w-auto">
+          Cancel
+        </Button>
+      </div>
+    </Sheet>
   );
 }

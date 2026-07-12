@@ -6,6 +6,18 @@ const config: Config = {
     "./components/**/*.{ts,tsx}",
   ],
   theme: {
+    // xs breakpoint = 375px (iPhone SE / iPhone 13 mini width). Everything
+    // Tailwind ships with starts at sm=640px. xs lets us differentiate
+    // the tiny-phone case (Popout wordmark register hiding, etc.) from
+    // the "mobile in general" case.
+    screens: {
+      xs: "375px",
+      sm: "640px",
+      md: "768px",
+      lg: "1024px",
+      xl: "1280px",
+      "2xl": "1536px",
+    },
     extend: {
       colors: {
         // ============================================================
@@ -136,7 +148,21 @@ const config: Config = {
           "75%":  { transform: "translate(-1%, -1%)" },
           "100%": { transform: "translate(0, 0)" },
         },
-      },
+// Bottom-sheet entry — slides up from below the viewport.
+        "sheet-in": {
+          "0%":   { transform: "translateY(100%)" },
+          "100%": { transform: "translateY(0)" },
+        },
+        // Desktop modal entry — scale + fade so the sheet doesn't
+        // read as an unfinished mobile leftover on wide viewports.
+        "modal-in": {
+          "0%":   { opacity: "0", transform: "scale(0.96)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
+        "backdrop-in": {
+          "0%":   { opacity: "0" },
+          "100%": { opacity: "1" },
+        },      },
       animation: {
         "stamp-pulse":  "stamp-pulse 2.4s cubic-bezier(0.4, 0, 0.6, 1) infinite",
         "scan-sweep":   "scan-sweep 2s ease-in-out infinite alternate",
@@ -146,6 +172,9 @@ const config: Config = {
         "name-rise":    "name-rise 800ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
         "seal-ambient": "seal-ambient 4s ease-in-out infinite",
         "grain-drift":  "grain-drift 60s ease-in-out infinite",
+        "sheet-in":     "sheet-in 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "modal-in":     "modal-in 200ms cubic-bezier(0.16, 1, 0.3, 1) forwards",
+        "backdrop-in":  "backdrop-in 180ms ease-out forwards",
       },
     },
   },

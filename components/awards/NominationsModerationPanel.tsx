@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { Eyebrow } from "@/components/ui/Eyebrow";
 import { Badge } from "@/components/ui/Badge";
+import { Sheet } from "@/components/ui/Sheet";
 import { useToast } from "@/components/ui/Toast";
 import type { AwardNominee } from "@/types";
 
@@ -247,59 +248,62 @@ function MergePicker({
   );
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onCancel();
-      }}
-    >
-      <div className="w-full max-w-md">
-        <Card className="space-y-4">
-          <div>
+    <Sheet open onClose={onCancel} maxWidth="md" ariaLabel="Merge nomination into ballot entry">
+      <div className="sticky top-0 bg-stamp-surface z-10 px-5 sm:px-6 pt-4 pb-3 border-b border-stamp-border">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
             <Eyebrow>Merge into existing</Eyebrow>
-            <h3 className="font-display text-display-xs text-stamp-white mt-2">
+            <h3 className="font-display text-display-xs text-stamp-white mt-1.5 text-balance">
               "{group.sample_name}" ({group.count} nomination{group.count === 1 ? "" : "s"})
             </h3>
-            <p className="text-xs text-stamp-muted-2 mt-2">
-              Pick the ballot entry this name should fold into.
-            </p>
           </div>
-
-          <input
-            type="text"
-            placeholder="Filter…"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full p-3 rounded-md bg-stamp-surface2 border border-stamp-border text-sm text-stamp-white placeholder:text-stamp-muted-2 focus:outline-none focus:border-stamp-orange"
-            autoFocus
-          />
-
-          <div className="max-h-64 overflow-y-auto space-y-1">
-            {filtered.length === 0 ? (
-              <p className="text-xs text-stamp-muted-2 text-center py-4">
-                No matches.
-              </p>
-            ) : (
-              filtered.map((n) => (
-                <button
-                  key={n.id}
-                  type="button"
-                  onClick={() => onMerge(n.id)}
-                  className="w-full text-left px-3 py-2 rounded-md text-sm text-stamp-white hover:bg-stamp-orange/15 hover:text-stamp-orange transition-colors"
-                >
-                  {n.display_name}
-                </button>
-              ))
-            )}
-          </div>
-
-          <div className="flex items-center justify-end pt-2 border-t border-stamp-border">
-            <Button variant="ghost" onClick={onCancel}>
-              Cancel
-            </Button>
-          </div>
-        </Card>
+          <button
+            type="button"
+            onClick={onCancel}
+            aria-label="Close"
+            className="shrink-0 -mr-2 -mt-1 w-10 h-10 rounded-md flex items-center justify-center text-stamp-muted-2 hover:text-stamp-white hover:bg-stamp-surface2 transition-colors"
+          >
+            <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4" aria-hidden="true">
+              <path d="M4 4 L12 12 M12 4 L4 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+        <p className="text-xs text-stamp-muted-2 mt-2 text-pretty">
+          Pick the ballot entry this name should fold into.
+        </p>
       </div>
-    </div>
+
+      <div className="px-5 sm:px-6 py-5 space-y-4">
+        <input
+          type="text"
+          placeholder="Filter…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="w-full p-3 min-h-[48px] rounded-md bg-stamp-surface2 border border-stamp-border text-base sm:text-sm text-stamp-white placeholder:text-stamp-muted-2 focus:outline-none focus:border-stamp-orange"
+          autoFocus
+        />
+
+        <div className="space-y-1">
+          {filtered.length === 0 ? (
+            <p className="text-xs text-stamp-muted-2 text-center py-6">No matches.</p>
+          ) : (
+            filtered.map((n) => (
+              <button
+                key={n.id}
+                type="button"
+                onClick={() => onMerge(n.id)}
+                className="w-full text-left px-3 py-3 min-h-[48px] rounded-md text-sm text-stamp-white hover:bg-stamp-orange/15 hover:text-stamp-orange transition-colors"
+              >
+                {n.display_name}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="sticky bottom-0 bg-stamp-surface border-t border-stamp-border px-5 sm:px-6 pt-4 pb-safe-plus-4 sm:pb-4">
+        <Button variant="secondary" size="lg" fullWidth onClick={onCancel}>Cancel</Button>
+      </div>
+    </Sheet>
   );
 }

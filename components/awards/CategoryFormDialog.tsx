@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Card } from "@/components/ui/Card";
+import { useState } from "react";
+import { Sheet } from "@/components/ui/Sheet";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Eyebrow } from "@/components/ui/Eyebrow";
@@ -48,15 +48,7 @@ export function CategoryFormDialog({
   const isEdit = !!existing;
   const isLocked = existing?.phase !== undefined && existing.phase !== "draft";
 
-  // Close on Escape — small accessibility detail that matters more than
-  // it looks like, since this dialog covers the underlying content fully.
-  useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
+  // Escape + backdrop dismiss handled by Sheet — no local effect needed.
 
   const handleSave = async () => {
     setError(null);
@@ -115,30 +107,36 @@ export function CategoryFormDialog({
   };
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
+    <Sheet
+      open
+      onClose={onClose}
+      maxWidth="lg"
+      dismissible={!saving}
+      ariaLabel={isEdit ? "Edit category" : "New category"}
     >
-      <div className="w-full max-w-lg">
-        <Card className="space-y-5">
-          <div className="flex items-baseline justify-between gap-3">
-            <div>
-              <Eyebrow>{isEdit ? "Edit category" : "New category"}</Eyebrow>
-              <h2 className="font-display text-display-sm text-stamp-white mt-1">
-                {isEdit ? existing.label : "What's the award?"}
-              </h2>
-            </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="text-stamp-muted-2 hover:text-stamp-white text-sm"
-            >
-              Close
-            </button>
+      <div className="sticky top-0 bg-stamp-surface z-10 px-5 sm:px-6 pt-4 pb-3 border-b border-stamp-border">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <Eyebrow>{isEdit ? "Edit category" : "New category"}</Eyebrow>
+            <h2 className="font-display text-display-sm text-stamp-white mt-1.5 text-balance">
+              {isEdit ? existing.label : "What's the award?"}
+            </h2>
           </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            disabled={saving}
+            className="shrink-0 -mr-2 -mt-1 w-10 h-10 rounded-md flex items-center justify-center text-stamp-muted-2 hover:text-stamp-white hover:bg-stamp-surface2 transition-colors disabled:opacity-50"
+          >
+            <svg viewBox="0 0 16 16" fill="none" className="w-4 h-4" aria-hidden="true">
+              <path d="M4 4 L12 12 M12 4 L4 12" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
+      <div className="px-5 sm:px-6 py-5 space-y-5">
           <Input
             label="Category name"
             placeholder="e.g. Best Dressed Female, MC of the Year"
@@ -161,8 +159,8 @@ export function CategoryFormDialog({
                 onClick={() => setIsFree(false)}
                 className={
                   !isFree
-                    ? "p-3 rounded-md bg-stamp-orange/15 text-stamp-orange border border-stamp-orange text-left"
-                    : "p-3 rounded-md text-stamp-muted-2 border border-stamp-border hover:text-stamp-white hover:border-stamp-muted-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    ? "min-h-[64px] p-3 rounded-md bg-stamp-orange/15 text-stamp-orange border border-stamp-orange text-left"
+                    : "min-h-[64px] p-3 rounded-md text-stamp-muted-2 border border-stamp-border hover:text-stamp-white hover:border-stamp-muted-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                 }
               >
                 <p className="text-sm font-medium">Paid votes</p>
@@ -176,8 +174,8 @@ export function CategoryFormDialog({
                 onClick={() => setIsFree(true)}
                 className={
                   isFree
-                    ? "p-3 rounded-md bg-stamp-orange/15 text-stamp-orange border border-stamp-orange text-left"
-                    : "p-3 rounded-md text-stamp-muted-2 border border-stamp-border hover:text-stamp-white hover:border-stamp-muted-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
+                    ? "min-h-[64px] p-3 rounded-md bg-stamp-orange/15 text-stamp-orange border border-stamp-orange text-left"
+                    : "min-h-[64px] p-3 rounded-md text-stamp-muted-2 border border-stamp-border hover:text-stamp-white hover:border-stamp-muted-2 text-left disabled:opacity-50 disabled:cursor-not-allowed"
                 }
               >
                 <p className="text-sm font-medium">Free poll</p>
@@ -248,21 +246,20 @@ export function CategoryFormDialog({
           </label>
 
           {error && (
-            <div className="p-3 rounded-md bg-stamp-red/10 border border-stamp-red/30 text-stamp-red text-sm">
+            <div className="p-3 rounded-md bg-stamp-red/10 border border-stamp-red/30 text-stamp-red text-sm" role="alert">
               {error}
             </div>
           )}
-
-          <div className="flex items-center justify-end gap-3 pt-3 border-t border-stamp-border">
-            <Button variant="ghost" onClick={onClose} disabled={saving}>
-              Cancel
-            </Button>
-            <Button glow onClick={handleSave} loading={saving}>
-              {isEdit ? "Save" : "Create category"}
-            </Button>
-          </div>
-        </Card>
       </div>
-    </div>
+
+      <div className="sticky bottom-0 bg-stamp-surface border-t border-stamp-border px-5 sm:px-6 pt-4 pb-safe-plus-4 sm:pb-4 flex flex-col sm:flex-row-reverse gap-2 sm:gap-3 sm:justify-start">
+        <Button glow size="lg" fullWidth onClick={handleSave} loading={saving} className="sm:w-auto">
+          {isEdit ? "Save" : "Create category"}
+        </Button>
+        <Button variant="ghost" size="lg" fullWidth onClick={onClose} disabled={saving} className="sm:w-auto">
+          Cancel
+        </Button>
+      </div>
+    </Sheet>
   );
 }

@@ -14,18 +14,31 @@ import { Eyebrow } from "@/components/ui/Eyebrow";
  */
 export function Features() {
   return (
+<<<<<<< HEAD
     <section id="trust" className="py-24 lg:py-32 bg-stamp-surface">
       <div className="max-w-6xl mx-auto px-6">
         <div className="grid lg:grid-cols-12 gap-8 mb-16 items-end">
           <div className="lg:col-span-6">
             <Eyebrow>The product</Eyebrow>
             <h2 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-4 text-balance">
+=======
+    <section id="trust" className="py-16 sm:py-24 lg:py-32 bg-stamp-surface">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+        <div className="grid lg:grid-cols-12 gap-6 sm:gap-8 mb-10 sm:mb-16 items-end">
+          <div className="lg:col-span-6">
+            <Eyebrow>The product</Eyebrow>
+            <h2 className="font-display text-[2.25rem] xs:text-display-md sm:text-display-lg text-stamp-white mt-3 sm:mt-4 text-balance leading-[0.95]">
+>>>>>>> 6054257 (stamp mobile ui)
               Built for how Nigerian campus events{" "}
               <span className="italic">actually</span> work.
             </h2>
           </div>
           <div className="lg:col-span-5 lg:col-start-8">
+<<<<<<< HEAD
             <p className="text-stamp-muted-2 leading-relaxed text-pretty">
+=======
+            <p className="text-stamp-muted-2 leading-relaxed text-pretty text-sm sm:text-base">
+>>>>>>> 6054257 (stamp mobile ui)
               Every design decision started as a scar from running a real
               event at Rivers State University. What follows is what
               survived contact with the door.
@@ -33,9 +46,15 @@ export function Features() {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* Bento — 3 columns on desktop, first card spans 2 cols x 1 row.
             Rows do not force equal heights; short cards sit shorter. */}
         <div className="grid md:grid-cols-3 gap-4 auto-rows-min">
+=======
+        {/* Bento — single column on mobile, 3 columns md+. First tile
+            still gets col-span-2 on md+. */}
+        <div className="grid md:grid-cols-3 gap-3 sm:gap-4 auto-rows-min">
+>>>>>>> 6054257 (stamp mobile ui)
           {/* ---- Dashboard preview (accent, col-span-2) ---- */}
           <Card
             accent

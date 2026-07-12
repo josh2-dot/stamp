@@ -35,10 +35,17 @@ export const metadata: Metadata = {
   },
 };
 
-// Theme color — matches the paper ground so mobile chrome doesn't
-// draw a hard seam against the top of the page.
+// Theme color + mobile-critical viewport settings.
+//   - width: device-width      — respect physical device width
+//   - initialScale: 1          — start unzoomed
+//   - maximumScale: 5          — allow pinch-zoom for a11y (never lock)
+//   - viewportFit: "cover"     — required for env(safe-area-inset-*) on iOS
 export const viewport: Viewport = {
   themeColor: "#EDE4CE",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -51,8 +58,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className="bg-stamp-black text-stamp-white font-sans antialiased min-h-screen paper-grain relative isolate">
         {/* Skip-to-content — vermillion pill on cream, matches the CTA
             styling so keyboard users see the site's actual palette. */}
-        <a
-          href="#main"
+        
+          <a href="#main"
           className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-stamp-orange focus:text-stamp-black focus:rounded-md focus:font-medium focus:text-sm focus:shadow-stamp-glow"
         >
           Skip to content

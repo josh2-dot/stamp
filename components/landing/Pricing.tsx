@@ -13,44 +13,44 @@ import { StampSeal } from "@/components/ui/StampSeal";
  */
 export function Pricing() {
   return (
-    <section id="pricing" className="py-24 lg:py-32">
-      <div className="max-w-4xl mx-auto px-6">
-        <div className="text-center mb-14">
+    <section id="pricing" className="py-16 sm:py-24 lg:py-32">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6">
+        <div className="text-center mb-10 sm:mb-14">
           <Eyebrow align="center">The pricing page</Eyebrow>
-          <h2 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-4 text-balance">
+          <h2 className="font-display text-[2.25rem] xs:text-display-md sm:text-display-lg text-stamp-white mt-3 sm:mt-4 text-balance leading-[0.95]">
             One fee. <span className="italic text-stamp-muted-2">Nothing else.</span>
           </h2>
-          <p className="text-stamp-muted-2 mt-5 max-w-md mx-auto leading-relaxed">
+          <p className="text-stamp-muted-2 mt-4 sm:mt-5 max-w-md mx-auto leading-relaxed text-sm sm:text-base">
             No setup fee. No subscription. No surprise deductions when
             settlement hits your bank.
           </p>
         </div>
 
         <Card accent elevated className="overflow-hidden">
-          <div className="grid md:grid-cols-[1.1fr_1fr] gap-10 items-start">
+          <div className="grid md:grid-cols-[1.1fr_1fr] gap-8 sm:gap-10 items-start">
             {/* ---- Left: the number ---- */}
             <div className="relative">
               <Eyebrow tone="accent">Per ticket sold</Eyebrow>
               <div className="flex items-baseline gap-3 mt-4">
+                {/* Scaled down mobile so the price doesn't dominate the
+                    full viewport before the receipt below is visible. */}
                 <span
-                  className="font-display print-num text-stamp-orange leading-none text-[5.5rem] sm:text-[6.5rem]"
+                  className="font-display print-num text-stamp-orange leading-none text-[4.25rem] xs:text-[5rem] sm:text-[6.5rem]"
                   style={{ fontVariationSettings: '"opsz" 144, "SOFT" 30, "WONK" 1' }}
                 >
                   ₦200
                 </span>
-                <span className="font-display text-display-sm text-stamp-white/70 italic">
+                <span className="font-display text-display-xs sm:text-display-sm text-stamp-white/70 italic">
                   + 3%
                 </span>
               </div>
-              <p className="text-stamp-muted-2 text-sm mt-5 max-w-sm leading-relaxed">
+              <p className="text-stamp-muted-2 text-sm mt-4 sm:mt-5 max-w-sm leading-relaxed text-pretty">
                 Added silently to the ticket price. Buyers see one number —
                 no surprise fee line at checkout. You receive exactly what
                 you set.
               </p>
 
-              {/* Receipt — literal arithmetic to make the fee model
-                  concrete. Tabular numerals so the columns line up. */}
-              <div className="mt-8 p-4 border-t border-b border-stamp-border">
+              <div className="mt-6 sm:mt-8 p-4 border-t border-b border-stamp-border">
                 <Eyebrow>You set</Eyebrow>
                 <div className="mt-2 space-y-1.5 text-sm print-num">
                   <div className="flex justify-between text-stamp-white">
@@ -70,7 +70,7 @@ export function Pricing() {
             </div>
 
             {/* ---- Right: what's in ---- */}
-            <ul className="space-y-3.5 text-sm md:pt-1">
+            <ul className="space-y-3 sm:space-y-3.5 text-sm md:pt-1">
               {[
                 "Unlimited events",
                 "Unlimited ticket tiers",
@@ -95,21 +95,21 @@ export function Pricing() {
             </ul>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-stamp-border flex flex-wrap items-center justify-between gap-4">
-            <div className="text-xs text-stamp-muted-2 max-w-md leading-relaxed">
+          {/* CTA row — stacks vertically on mobile so the button is full-
+              width and thumb-reachable. Text sits above. */}
+          <div className="mt-8 sm:mt-10 pt-6 border-t border-stamp-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-xs sm:text-sm text-stamp-muted-2 sm:max-w-md leading-relaxed">
               <span className="text-stamp-white font-medium">
                 Ready to run an event?
               </span>{" "}
               We onboard you personally over WhatsApp — no forms, no waiting queue.
             </div>
-            <a href="https://wa.me/2348012345678">
-              <Button glow>Start an event →</Button>
+            <a href="https://wa.me/2348012345678" className="w-full sm:w-auto shrink-0">
+              <Button glow size="lg" fullWidth className="sm:w-auto">Start an event →</Button>
             </a>
           </div>
 
-          {/* Corner mark — the seal at low opacity, bottom-right,
-              signing off the pricing card as a formal document. */}
-          <div className="absolute -bottom-4 -right-4 opacity-[0.06] pointer-events-none">
+          <div className="absolute -bottom-4 -right-4 opacity-[0.06] pointer-events-none hidden sm:block">
             <StampSeal size={140} tilt centerText="STAMP" footerText="OFFICIAL" />
           </div>
         </Card>

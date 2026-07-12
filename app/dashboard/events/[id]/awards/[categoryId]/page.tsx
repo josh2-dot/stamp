@@ -101,14 +101,14 @@ export default function CategoryManagementPage() {
       <div className="mb-10">
         <Link
           href={`/dashboard/events/${params.id}/awards`}
-          className="text-xs text-stamp-muted-2 hover:text-stamp-white"
+          className="inline-flex items-center min-h-[44px] py-2 text-xs text-stamp-muted-2 hover:text-stamp-white"
         >
           ← All categories
         </Link>
-        <div className="flex items-end justify-between gap-4 flex-wrap mt-3">
-          <div>
+        <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-4 lg:gap-6 mt-3">
+          <div className="min-w-0">
             <Eyebrow>Category</Eyebrow>
-            <h1 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-2 text-balance">
+            <h1 className="font-display text-[2rem] xs:text-display-md sm:text-display-lg text-stamp-white mt-2 text-balance">
               {category.label}
             </h1>
             <div className="flex items-center gap-3 mt-3 text-xs text-stamp-muted-2 flex-wrap">
@@ -125,14 +125,17 @@ export default function CategoryManagementPage() {
           </div>
 
           {/* Phase advance action — the one big move the organizer's here for.
-              For phases where the ballot is still mutable, a secondary "Add
-              nominee" button lets the organizer bypass public nominations. */}
-          <div className="flex items-center gap-2 flex-wrap justify-end">
+              Mobile: buttons stack full-width in reading order (add first,
+              skip second, primary third) so no wrapping. Desktop: inline
+              row, secondary actions to the left of the glow CTA. */}
+          <div className="flex flex-col-reverse sm:flex-row sm:flex-wrap sm:items-center gap-2 sm:justify-end lg:justify-end">
             {["draft", "nominations_open", "moderation"].includes(phase) && (
               <Button
                 variant="ghost"
                 size="lg"
+                fullWidth
                 onClick={() => setAddNomineeOpen(true)}
+                className="sm:w-auto"
               >
                 + Add nominee
               </Button>
@@ -142,16 +145,12 @@ export default function CategoryManagementPage() {
               onAdvance={advance}
               onReveal={() => setRevealOpen(true)}
               canAdvance={
-                // For voting_open transitions from any phase, gate on ≥2 nominees.
-                // Other transitions have no numeric prereq.
                 (phase === "moderation" ||
                   (phase === "draft" && eligibleNominees.length >= 2) ||
                   (phase === "nominations_open" && eligibleNominees.length >= 2))
                   ? eligibleNominees.length >= 2
                   : true
               }
-              // In draft or nominations_open, if ≥2 nominees already exist,
-              // the organizer can skip straight to voting.
               canSkipToVoting={
                 (phase === "draft" || phase === "nominations_open") &&
                 eligibleNominees.length >= 2
@@ -251,12 +250,21 @@ function PhaseAdvanceCTA({
         <Button
           variant="secondary"
           size="lg"
+          fullWidth
           onClick={() => onAdvance("voting_open")}
+          className="sm:w-auto"
         >
           Skip to voting →
         </Button>
       )}
-      <Button glow size="lg" onClick={cta.action} disabled={!canAdvance}>
+      <Button
+        glow
+        size="lg"
+        fullWidth
+        onClick={cta.action}
+        disabled={!canAdvance}
+        className="sm:w-auto"
+      >
         {cta.label}
       </Button>
     </>

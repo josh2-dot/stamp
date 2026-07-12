@@ -54,26 +54,32 @@ export default function AwardsOverviewPage() {
 
   return (
     <PageShell>
-      <div className="flex items-end justify-between gap-4 flex-wrap mb-10">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 sm:gap-6 mb-8 sm:mb-10">
+        <div className="min-w-0">
           <Link
             href={`/dashboard/events/${params.id}`}
-            className="text-xs text-stamp-muted-2 hover:text-stamp-white"
+            className="inline-flex items-center min-h-[44px] py-2 text-xs text-stamp-muted-2 hover:text-stamp-white"
           >
             ← Event dashboard
           </Link>
-          <Eyebrow className="mt-3">Awards</Eyebrow>
-          <h1 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-2">
+          <Eyebrow className="mt-2">Awards</Eyebrow>
+          <h1 className="font-display text-[2rem] xs:text-display-md sm:text-display-lg text-stamp-white mt-2 text-balance leading-[0.95]">
             {empty ? "Set up an award show." : "Run your award show."}
           </h1>
-          <p className="text-stamp-muted-2 text-sm mt-3 max-w-xl">
+          <p className="text-stamp-muted-2 text-sm mt-3 max-w-xl text-pretty">
             {empty
               ? "Create categories, take public nominations, run voting, reveal winners. STAMP charges a flat fee per event — only when votes come in."
               : "Each category runs its own lifecycle. Nominations → moderation → voting → reveal."}
           </p>
         </div>
         {!empty && (
-          <Button glow onClick={() => { setEditing(null); setShowForm(true); }}>
+          <Button
+            glow
+            size="lg"
+            fullWidth
+            onClick={() => { setEditing(null); setShowForm(true); }}
+            className="sm:w-auto sm:size-md"
+          >
             + New category
           </Button>
         )}
@@ -125,23 +131,25 @@ export default function AwardsOverviewPage() {
         </Card>
       ) : (
         <>
-          {/* Summary stats — kept light, the real action is below */}
-          <div className="grid grid-cols-3 gap-4 mb-8">
+          {/* Summary stats — kept light, the real action is below.
+              Mobile: revenue on its own row so the naira number never
+              wraps against the two count cards on 375px. */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
             <Card>
               <Eyebrow>Categories</Eyebrow>
-              <p className="font-display text-display-sm text-stamp-white mt-2 tabular-nums">
+              <p className="font-display text-display-xs sm:text-display-sm text-stamp-white mt-2 tabular-nums">
                 {categories.length}
               </p>
             </Card>
             <Card>
               <Eyebrow>Nominations</Eyebrow>
-              <p className="font-display text-display-sm text-stamp-white mt-2 tabular-nums">
+              <p className="font-display text-display-xs sm:text-display-sm text-stamp-white mt-2 tabular-nums">
                 {totalNominations.toLocaleString()}
               </p>
             </Card>
-            <Card>
+            <Card className="col-span-2 sm:col-span-1">
               <Eyebrow>Vote revenue</Eyebrow>
-              <p className="font-display text-display-sm text-stamp-orange mt-2 tabular-nums">
+              <p className="font-display text-display-xs sm:text-display-sm text-stamp-orange mt-2 tabular-nums">
                 {formatNaira(totalRevenue)}
               </p>
             </Card>

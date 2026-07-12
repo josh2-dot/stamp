@@ -22,7 +22,7 @@ export function CopyButton({ text, label = "Copy" }: CopyButtonProps) {
         setCopied(true);
         setTimeout(() => setCopied(false), 1500);
       }}
-      className="px-4 py-3 rounded-md border border-stamp-border bg-stamp-surface2 text-sm text-stamp-white hover:border-stamp-orange transition-colors whitespace-nowrap"
+      className="px-4 py-3 rounded-md border border-stamp-border bg-stamp-surface2 text-sm text-stamp-white hover:border-stamp-orange transition-colors whitespace-nowrap min-h-[44px] sm:min-h-0"
     >
       {copied ? "✓ Copied" : label}
     </button>

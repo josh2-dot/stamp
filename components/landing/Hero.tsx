@@ -30,22 +30,25 @@ export function Hero() {
         aria-hidden="true"
       />
 
-      <div className="relative max-w-6xl mx-auto px-6 pt-20 pb-24 lg:pt-28 lg:pb-32">
-        <div className="grid lg:grid-cols-12 gap-12 lg:gap-8 items-center">
+      <div className="relative max-w-6xl mx-auto px-4 sm:px-6 pt-12 sm:pt-20 pb-16 sm:pb-24 lg:pt-28 lg:pb-32">
+        <div className="grid lg:grid-cols-12 gap-10 sm:gap-12 lg:gap-8 items-center">
           {/* ============================================================
               Left — the message
               ============================================================ */}
           <div className="lg:col-span-7">
             {/* Location tag as an editorial marker, not a badge pill.
                 Reads as "filed from Port Harcourt" — the paper's dateline. */}
-            <div className="inline-flex items-center gap-3 mb-10">
-              <span className="w-8 h-px bg-stamp-white/40" aria-hidden="true" />
-              <span className="text-[11px] uppercase tracking-[0.24em] text-stamp-muted-2 font-medium">
+            <div className="inline-flex items-center gap-3 mb-6 sm:mb-10">
+              <span className="w-6 sm:w-8 h-px bg-stamp-white/40" aria-hidden="true" />
+              <span className="text-[10px] sm:text-[11px] uppercase tracking-[0.24em] text-stamp-muted-2 font-medium">
                 Port Harcourt · Established 2026
               </span>
             </div>
 
-            <h1 className="font-display text-display-lg sm:text-[4.25rem] lg:text-[5.25rem] leading-[0.95] tracking-[-0.035em] text-stamp-white text-balance">
+            {/* Display headline — display-md on tiny screens, ramps up
+                fast. Fraunces has real presence at scale, so we push
+                early into the display-lg territory on ≥sm. */}
+            <h1 className="font-display text-[2.75rem] xs:text-[3.25rem] sm:text-[4.25rem] lg:text-[5.25rem] leading-[0.95] tracking-[-0.035em] text-stamp-white text-balance">
               Campus tickets,
               <br />
               <span className="italic text-stamp-orange" style={{ fontVariationSettings: '"opsz" 144, "SOFT" 50, "WONK" 1' }}>
@@ -54,19 +57,23 @@ export function Hero() {
               at the door.
             </h1>
 
-            <p className="mt-8 max-w-lg text-base sm:text-lg text-stamp-muted-2 leading-relaxed text-pretty">
+            <p className="mt-6 sm:mt-8 max-w-lg text-base sm:text-lg text-stamp-muted-2 leading-relaxed text-pretty">
               STAMP is how Nigerian student organizers sell tickets,
               deliver them by WhatsApp, and scan them at the gate —
               without a third party running off with the float.
             </p>
 
-            <div className="mt-10 flex flex-wrap items-center gap-4">
-              <Link href="#pricing">
-                <Button size="lg" glow>Start selling tickets</Button>
+            {/* CTA row — stacks full-width on mobile so both actions
+                land in the thumb zone. Ghost link inline on ≥sm. */}
+            <div className="mt-8 sm:mt-10 flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 sm:gap-4">
+              <Link href="#pricing" className="w-full sm:w-auto">
+                <Button size="lg" glow fullWidth className="sm:w-auto">
+                  Start selling tickets
+                </Button>
               </Link>
               <Link
                 href="#how"
-                className="group inline-flex items-center gap-2 text-sm text-stamp-white hover:text-stamp-orange transition-colors py-3.5"
+                className="group inline-flex items-center justify-center sm:justify-start gap-2 text-sm text-stamp-white hover:text-stamp-orange transition-colors py-3.5 min-h-[44px]"
               >
                 <span className="border-b border-stamp-white/30 group-hover:border-stamp-orange">
                   See how it works
@@ -75,9 +82,9 @@ export function Hero() {
               </Link>
             </div>
 
-            {/* Confidence strip — ledger-style, with vertical rules.
-                Numbers set in .print-num for Fraunces heavy + tabular. */}
-            <dl className="mt-16 grid grid-cols-3 max-w-lg">
+            {/* Confidence strip — mobile tightens the padding-left on
+                divided items so 375px viewports don't wrap. */}
+            <dl className="mt-12 sm:mt-16 grid grid-cols-3 max-w-lg">
               {[
                 { label: "Sold to date",    value: "1,247" },
                 { label: "Median settle",   value: "~22h" },
@@ -85,10 +92,10 @@ export function Hero() {
               ].map((stat, i) => (
                 <div
                   key={stat.label}
-                  className={i > 0 ? "pl-6 border-l border-stamp-border" : ""}
+                  className={i > 0 ? "pl-3 sm:pl-6 border-l border-stamp-border" : ""}
                 >
-                  <Eyebrow>{stat.label}</Eyebrow>
-                  <dd className="font-display print-num text-[1.75rem] text-stamp-white mt-2.5 leading-none">
+                  <Eyebrow className="text-[10px] sm:text-xs">{stat.label}</Eyebrow>
+                  <dd className="font-display print-num text-[1.35rem] sm:text-[1.75rem] text-stamp-white mt-2 sm:mt-2.5 leading-none">
                     {stat.value}
                   </dd>
                 </div>

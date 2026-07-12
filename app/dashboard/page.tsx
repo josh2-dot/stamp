@@ -34,8 +34,8 @@ export default async function DashboardPage() {
           That's a setup bug on our side — message us on WhatsApp and we'll fix it.
         </p>
         <div className="text-center mt-6">
-          <a
-            href="https://wa.me/2348012345678"
+          
+            <a href="https://wa.me/2348068404839"
             className="text-stamp-orange hover:underline"
           >
             Message support →
@@ -58,14 +58,14 @@ export default async function DashboardPage() {
 
   return (
     <PageShell>
-      <div className="flex items-end justify-between mb-12 flex-wrap gap-4 pb-8 border-b border-stamp-border">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between mb-8 sm:mb-12 gap-4 sm:gap-6 pb-6 sm:pb-8 border-b border-stamp-border">
+        <div className="min-w-0">
           {/* Sign-out is quieter — attached to the identity line as a
               text affordance, not a page-level action. */}
           <Eyebrow>
-            <span>Signed in as {organizer.email}</span>
+            <span className="truncate block">Signed in as {organizer.email}</span>
           </Eyebrow>
-          <h1 className="font-display text-display-md sm:text-display-lg text-stamp-white mt-4 text-balance">
+          <h1 className="font-display text-[2rem] xs:text-display-md sm:text-display-lg text-stamp-white mt-3 sm:mt-4 text-balance leading-[0.95]">
             Your events
           </h1>
           <form action="/api/auth/signout" method="post" className="inline">
@@ -77,23 +77,27 @@ export default async function DashboardPage() {
             </button>
           </form>
         </div>
-        <div className="flex items-center gap-2">
+        {/* Actions row — grid on mobile so each button lands as a clean
+            tap target, inline flex on ≥sm. Primary CTA spans the row on
+            mobile so it doesn't get squeezed between secondaries. */}
+        <div className="grid grid-cols-3 sm:flex sm:items-center gap-2 shrink-0">
           {isAdminEmail(organizer.email) && (
-            <Link href="/admin">
-              <Button variant="ghost" size="sm">
+            <Link href="/admin" className="w-full sm:w-auto">
+              <Button variant="ghost" size="sm" fullWidth className="sm:w-auto">
                 Admin
               </Button>
             </Link>
           )}
-          <Link href="/dashboard/payouts">
-            <Button variant="ghost" size="sm">Payouts</Button>
+          <Link href="/dashboard/payouts" className="w-full sm:w-auto">
+            <Button variant="ghost" size="sm" fullWidth className="sm:w-auto">Payouts</Button>
           </Link>
-          <Link href="/dashboard/settings">
-            <Button variant="ghost" size="sm">Settings</Button>
+          <Link href="/dashboard/settings" className="w-full sm:w-auto">
+            <Button variant="ghost" size="sm" fullWidth className="sm:w-auto">Settings</Button>
           </Link>
-          {/* glow — the one headline action on the dashboard */}
-          <Link href="/dashboard/new">
-            <Button size="sm" glow>+ New event</Button>
+          {/* Primary CTA — full-width band on mobile, inline on ≥sm.
+              Spans all three cols on mobile so it lands as one clean tap. */}
+          <Link href="/dashboard/new" className="col-span-3 sm:col-span-1 w-full sm:w-auto">
+            <Button size="sm" glow fullWidth className="sm:w-auto">+ New event</Button>
           </Link>
         </div>
       </div>

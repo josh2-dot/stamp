@@ -17,6 +17,27 @@
        through `font-feature-settings`. Body inherits standard rendering. */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* Kills the semi-transparent grey flash iOS Safari draws on tap. */
+    -webkit-tap-highlight-color: transparent;
+    /* Prevent iOS from adjusting font-size on orientation change. */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  /* Prevent iOS input auto-zoom.
+     iOS Safari zooms the viewport whenever a focused input's computed
+     font-size < 16px. Every Input primitive uses text-sm (14px). Force
+     16px at the DOM level for mobile; the primitive re-takes 14px on
+     ≥sm where there's no zoom concern. */
+  @media (max-width: 640px) {
+    input, select, textarea {
+      font-size: 16px;
+    }
+  }
+
+  /* Remove the 300ms tap delay + double-tap-to-zoom on interactive elements */
+  button, a, [role="button"], input[type="button"], input[type="submit"] {
+    touch-action: manipulation;
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -77,6 +98,24 @@
 @layer utilities {
   .text-balance { text-wrap: balance; }
   .text-pretty  { text-wrap: pretty; }
+
+  /* Safe-area utilities — env(safe-area-inset-*) returns 0 on desktop
+     and older mobile browsers, so these compose safely into any layout.
+     The "-plus-N" variants stack an extra Nx4px onto the inset for
+     sticky bottom bars that already have their own visual padding. */
+  .pt-safe { padding-top: env(safe-area-inset-top); }
+  .pr-safe { padding-right: env(safe-area-inset-right); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+  .pl-safe { padding-left: env(safe-area-inset-left); }
+  .pb-safe-plus-4  { padding-bottom: calc(env(safe-area-inset-bottom) + 1rem); }
+  .pb-safe-plus-6  { padding-bottom: calc(env(safe-area-inset-bottom) + 1.5rem); }
+
+  /* Dynamic viewport height — 100dvh excludes iOS Safari's URL bar,
+     which 100vh includes. Use these on full-height containers so
+     they don't get chopped off at the bottom by browser chrome. */
+  .min-h-screen-dvh { min-height: 100vh; min-height: 100dvh; }
+  .h-screen-dvh     { height: 100vh; height: 100dvh; }
+  .max-h-screen-dvh { max-height: 100vh; max-height: 100dvh; }
 
   /* ============================================================
      .paper-grain

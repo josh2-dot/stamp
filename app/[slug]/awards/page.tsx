@@ -90,8 +90,8 @@ function AwardsInner() {
           <p className="text-stamp-muted-2 text-sm mt-3">
             This event doesn't have any award categories.
           </p>
-          <a
-            href={`/${params.slug}`}
+          
+            <a href={`/${params.slug}`}
             className="inline-block mt-6 text-sm text-stamp-orange hover:underline"
           >
             View event →
@@ -208,14 +208,14 @@ function CategorySection({
   return (
     <section>
       <div className="flex items-baseline justify-between gap-4 flex-wrap mb-5">
-        <div>
+        <div className="min-w-0">
           <Eyebrow>{category.phase === "voting_open" ? "Voting open" : category.phase === "revealed" ? "Winner" : "Voting closed"}</Eyebrow>
-          <h2 className="font-display text-display-md text-stamp-white mt-2 text-balance">
+          <h2 className="font-display text-[1.75rem] xs:text-display-md text-stamp-white mt-2 text-balance">
             {category.label}
           </h2>
         </div>
         {isVoting && (
-          <div className="text-right">
+          <div className="text-right shrink-0">
             {category.vote_price_kobo === 0 ? (
               <>
                 <p className="text-xs text-stamp-muted-2">Voting is</p>
@@ -285,8 +285,11 @@ function NomineeCard({
           : "border-stamp-border bg-stamp-surface"
       }`}
     >
-      {/* Photo area — falls back to initials when no photo */}
-      <div className="aspect-square bg-stamp-surface2 relative">
+      {/* Photo area — falls back to initials when no photo.
+          Mobile: shallow 3:2 aspect so the card doesn't dominate a
+          single-scroll view. Desktop: back to aspect-square where the
+          3-column grid needs the taller shape to keep the row rhythm. */}
+      <div className="aspect-[3/2] sm:aspect-square bg-stamp-surface2 relative">
         {nominee.photo_url ? (
           <img
             src={nominee.photo_url}
@@ -295,7 +298,7 @@ function NomineeCard({
           />
         ) : (
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className="font-display text-display-xl text-stamp-muted-2 opacity-30">
+            <span className="font-display text-[3.5rem] sm:text-display-xl text-stamp-muted-2 opacity-30">
               {nominee.display_name
                 .split(" ")
                 .slice(0, 2)
@@ -353,7 +356,7 @@ function NomineeCard({
         )}
 
         {showVoteButton && (
-          <Button glow size="sm" onClick={onVote} className="w-full">
+          <Button glow size="md" fullWidth onClick={onVote}>
             Vote →
           </Button>
         )}

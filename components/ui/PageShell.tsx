@@ -37,7 +37,10 @@ export function PageShell({
         id="main"
         className={cn(
           widthClass[maxWidth],
-          "mx-auto px-6 pt-16 pb-24 scroll-mt-24",
+          // Mobile: 16px horizontal (reclaims content width) + tighter
+          // top (sticky TopNav sits directly above). Bottom stacks safe-
+          // area for iOS home indicator clearance.
+          "mx-auto px-4 sm:px-6 pt-8 sm:pt-16 pb-16 sm:pb-24 pb-safe-plus-4 sm:pb-safe-plus-6 scroll-mt-24",
           className,
         )}
       >
